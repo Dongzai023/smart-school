@@ -1,7 +1,7 @@
 """用户扩展API"""
 
 from datetime import datetime
-from fastapi import APIRouter, Depends, HTTPException, UploadFile, File
+from fastapi import APIRouter, Depends, HTTPException, UploadFile, File, Query
 from pydantic import BaseModel
 from sqlalchemy.orm import Session
 import os
@@ -47,13 +47,21 @@ class UserStats(BaseModel):
 # API 接口
 # ========================
 
-@router.get("/me", response_model=UserResponse)
-def get_current_user(db: Session = Depends(get_db), user_id: int = 1):
+@router.get("/me")
+def get_current_user(db: Session = Depends(get_db), user_id: int = Query(1, description="用户ID")):
     """获取当前用户信息"""
     user = db.query(User).filter(User.id == user_id).first()
     if not user:
         raise HTTPException(status_code=404, detail="用户不存在")
-    return user
+    return {
+        "id": user.id,
+        "username": user.username,
+        "name": user.real_name,
+        "real_name": user.real_name,
+        "role": user.role,
+        "is_headmaster": user.is_headmaster or user.role == "head_teacher",
+        "is_verified": True,
+    }
 
 
 @router.put("/me", response_model=UserResponse)

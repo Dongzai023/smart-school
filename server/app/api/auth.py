@@ -60,7 +60,15 @@ def login(req: LoginRequest, db: Session = Depends(get_db)):
     token = create_access_token(data={"sub": user.id, "role": user.role})
     return LoginResponse(
         access_token=token,
-        user={"id": user.id, "username": user.username, "real_name": user.real_name, "role": user.role},
+        user={
+            "id": user.id, 
+            "username": user.username, 
+            "name": user.real_name,
+            "real_name": user.real_name, 
+            "role": user.role,
+            "is_headmaster": user.is_headmaster or user.role == "head_teacher",
+            "is_verified": True,
+        },
     )
 
 
