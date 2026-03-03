@@ -74,6 +74,7 @@ def get_current_user_info(current_user: User = Depends(get_current_user)):
         "role": current_user.role,
         "is_headmaster": current_user.is_headmaster or current_user.role == "head_teacher",
         "is_verified": current_user.is_verified,
+        "avatar_url": current_user.avatar_url or "",
     }
 
 

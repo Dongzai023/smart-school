@@ -7,7 +7,8 @@ Page({
     userInfo: null,
     todaySchedule: [],      // 今日签到安排
     checkInStatus: '待签',  // 整体状态文字
-    loading: false
+    loading: false,
+    baseUrl: api.BASE_URL
   },
 
   onLoad() {

@@ -108,9 +108,18 @@
   overflow: hidden;
 }
 
+.avatar-white.has-avatar {
+  background: transparent;
+}
+
 .avatar-icon {
   width: 64rpx;
   height: 64rpx;
+}
+
+.avatar-icon.avatar-full {
+  width: 100%;
+  height: 100%;
 }
 
 .avatar-status-badge {

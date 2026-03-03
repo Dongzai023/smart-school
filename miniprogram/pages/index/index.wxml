@@ -25,8 +25,8 @@
       <!-- 左侧头像 -->
       <view class="user-avatar-section">
         <view class="avatar-bg">
-          <view class="avatar-white">
-            <image class="avatar-icon" src="/assets/CodeBubbyAssets/2_423/5.svg" mode="aspectFit"></image>
+          <view class="avatar-white {{userInfo.avatar_url ? 'has-avatar' : ''}}">
+            <image class="avatar-icon {{userInfo.avatar_url ? 'avatar-full' : ''}}" src="{{userInfo.avatar_url ? baseUrl + userInfo.avatar_url : '/assets/CodeBubbyAssets/2_423/5.svg'}}" mode="{{userInfo.avatar_url ? 'aspectFill' : 'aspectFit'}}"></image>
           </view>
         </view>
         <view class="avatar-status-badge">
