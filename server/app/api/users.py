@@ -1,7 +1,8 @@
 """用户扩展API"""
 
 from datetime import datetime
-from fastapi import APIRouter, Depends, HTTPException, UploadFile, File, Query
+from typing import Optional
+from fastapi import APIRouter, Depends, HTTPException, UploadFile, File
 from pydantic import BaseModel
 from sqlalchemy.orm import Session
 import os
@@ -11,6 +12,7 @@ from app.database import get_db
 from app.models.user import User
 from app.models.checkin_record import CheckinRecord
 from app.models.leave import Leave
+from app.services.auth_service import get_current_user, hash_password, require_admin
 
 router = APIRouter(prefix="/api/users", tags=["用户"])
 
@@ -27,13 +29,19 @@ class UserResponse(BaseModel):
     is_active: bool
     employee_id: str | None = None
 
-    class Config:
-        from_attributes = True
-
 
 class PasswordChange(BaseModel):
     old_password: str
     new_password: str
+
+
+class UserUpdate(BaseModel):
+    nickname: str | None = None
+    phone: str | None = None
+    email: str | None = None
+    gender: str | None = None
+    teaching_subject: str | None = None
+    department_group: str | None = None
 
 
 class UserStats(BaseModel):
@@ -48,94 +56,90 @@ class UserStats(BaseModel):
 # ========================
 
 @router.get("/me")
-def get_current_user(db: Session = Depends(get_db), user_id: int = Query(1, description="用户ID")):
+def get_current_user_info(current_user: User = Depends(get_current_user)):
     """获取当前用户信息"""
-    user = db.query(User).filter(User.id == user_id).first()
-    if not user:
-        raise HTTPException(status_code=404, detail="用户不存在")
     return {
-        "id": user.id,
-        "username": user.username,
-        "name": user.real_name,
-        "real_name": user.real_name,
-        "role": user.role,
-        "is_headmaster": user.is_headmaster or user.role == "head_teacher",
-        "is_verified": True,
+        "id": current_user.id,
+        "username": current_user.username,
+        "employee_id": current_user.employee_id or current_user.username,
+        "name": current_user.real_name,
+        "real_name": current_user.real_name,
+        "nickname": current_user.nickname or "",
+        "department": current_user.department or "",
+        "department_group": current_user.department_group or "",
+        "email": current_user.email or "",
+        "phone": current_user.phone or "",
+        "gender": current_user.gender or "未知",
+        "teaching_subject": current_user.teaching_subject or "",
+        "role": current_user.role,
+        "is_headmaster": current_user.is_headmaster or current_user.role == "head_teacher",
+        "is_verified": current_user.is_verified,
     }
 
 
-@router.put("/me", response_model=UserResponse)
+@router.put("/me")
 def update_current_user(
-    real_name: str | None = None,
+    data: UserUpdate,
     db: Session = Depends(get_db),
-    user_id: int = 1
+    current_user: User = Depends(get_current_user)
 ):
     """更新当前用户信息"""
-    user = db.query(User).filter(User.id == user_id).first()
-    if not user:
-        raise HTTPException(status_code=404, detail="用户不存在")
-    
-    if real_name:
-        user.real_name = real_name
+    if data.nickname is not None:
+        current_user.nickname = data.nickname
+    if data.phone is not None:
+        current_user.phone = data.phone
+    if data.email is not None:
+        current_user.email = data.email
+    if data.gender is not None:
+        current_user.gender = data.gender
+    if data.teaching_subject is not None:
+        current_user.teaching_subject = data.teaching_subject
+    if data.department_group is not None:
+        current_user.department_group = data.department_group
     
     db.commit()
-    db.refresh(user)
-    return user
+    db.refresh(current_user)
+    
+    return {"message": "更新成功"}
 
 
 @router.post("/me/password")
 def change_password(
     data: PasswordChange,
     db: Session = Depends(get_db),
-    user_id: int = 1
+    current_user: User = Depends(get_current_user)
 ):
     """修改密码"""
-    from app.services.auth_service import verify_password, hash_password
+    from app.services.auth_service import verify_password
     
-    user = db.query(User).filter(User.id == user_id).first()
-    if not user:
-        raise HTTPException(status_code=404, detail="用户不存在")
-    
-    if not verify_password(data.old_password, user.password_hash):
+    if not verify_password(data.old_password, current_user.password_hash):
         raise HTTPException(status_code=400, detail="原密码错误")
     
-    user.password_hash = hash_password(data.new_password)
+    current_user.password_hash = hash_password(data.new_password)
     db.commit()
     
     return {"message": "密码修改成功"}
 
 
 @router.get("/me/avatar")
-def get_avatar(db: Session = Depends(get_db), user_id: int = 1):
+def get_avatar(current_user: User = Depends(get_current_user)):
     """获取头像URL"""
-    user = db.query(User).filter(User.id == user_id).first()
-    if not user:
-        raise HTTPException(status_code=404, detail="用户不存在")
-    
-    avatar_url = None
-    if hasattr(user, 'avatar_url') and user.avatar_url:
-        avatar_url = user.avatar_url
-    
-    return {"avatar_url": avatar_url}
+    return {"avatar_url": current_user.avatar_url or ""}
 
 
 @router.post("/me/avatar")
 async def upload_avatar(
     file: UploadFile = File(...),
     db: Session = Depends(get_db),
-    user_id: int = 1
+    current_user: User = Depends(get_current_user)
 ):
     """上传头像"""
-    user = db.query(User).filter(User.id == user_id).first()
-    if not user:
-        raise HTTPException(status_code=404, detail="用户不存在")
-    
     # 保存文件
     upload_dir = "/app/uploads/avatars"
     os.makedirs(upload_dir, exist_ok=True)
     
     ext = file.filename.split('.')[-1] if '.' in file.filename else 'jpg'
-    filename = f"{user_id}_{uuid.uuid4().hex}.{ext}"
+    filename = f"{current_user.id}_{uuid.uuid4().hex}.{ext}"
     filepath = os.path.join(upload_dir, filename)
     
     content = await file.read()
@@ -145,9 +149,8 @@ async def upload_avatar(
     avatar_url = f"/uploads/avatars/{filename}"
     
     # 更新用户头像
-    if hasattr(user, 'avatar_url'):
-        user.avatar_url = avatar_url
-        db.commit()
+    current_user.avatar_url = avatar_url
+    db.commit()
     
     return {"avatar_url": avatar_url}
 
@@ -157,21 +160,22 @@ def get_activities(
     skip: int = 0,
     limit: int = 20,
     db: Session = Depends(get_db),
-    user_id: int = 1
+    current_user: User = Depends(get_current_user)
 ):
     """获取最近活动"""
     # 获取签到记录作为活动
     checkins = db.query(CheckinRecord).filter(
-        CheckinRecord.user_id == user_id
+        CheckinRecord.user_id == current_user.id
     ).order_by(CheckinRecord.checkin_time.desc()).limit(limit).all()
     
     activities = []
     for c in checkins:
         activities.append({
             "type": "checkin",
-            "time": c.checkin_time.isoformat(),
+            "time": c.checkin_time.isoformat() if c.checkin_time else None,
+            "date": c.checkin_date.isoformat() if c.checkin_date else None,
             "status": c.status,
-            "message": f"签到: {c.status}"
+            "message": f"签到: {c.time_slot_label}"
         })
     
     return activities
@@ -180,27 +184,27 @@ def get_activities(
 @router.get("/me/stats", response_model=UserStats)
 def get_user_stats(
     db: Session = Depends(get_db),
-    user_id: int = 1
+    current_user: User = Depends(get_current_user)
 ):
     """获取用户统计"""
     # 全部签到统计
     total_checkins = db.query(CheckinRecord).filter(
-        CheckinRecord.user_id == user_id
+        CheckinRecord.user_id == current_user.id
     ).count()
     
     on_time_count = db.query(CheckinRecord).filter(
-        CheckinRecord.user_id == user_id,
+        CheckinRecord.user_id == current_user.id,
         CheckinRecord.status == "signed"
     ).count()
     
     late_count = db.query(CheckinRecord).filter(
-        CheckinRecord.user_id == user_id,
+        CheckinRecord.user_id == current_user.id,
         CheckinRecord.status == "late"
     ).count()
     
     # 待审批请假
     pending_leaves = db.query(Leave).filter(
-        Leave.user_id == user_id,
+        Leave.user_id == current_user.id,
         Leave.status == "pending"
     ).count()
     
@@ -208,5 +212,125 @@ def get_user_stats(
         "total_checkins": total_checkins,
         "on_time_count": on_time_count,
         "late_count": late_count,
+        "pending_leaves": pending_leaves
+    }
+
+
+# ========================
+# 管理员管理接口
+# ========================
+
+class UserPermissionUpdate(BaseModel):
+    can_scan_unlock: Optional[bool] = None
+    is_verified: Optional[bool] = None
+    is_active: Optional[bool] = None
+    is_headmaster: Optional[bool] = None
+
+
+@router.get("/admin/list")
+def admin_list_users(
+    page: int = 1,
+    page_size: int = 50,
+    role: Optional[str] = None,
+    department: Optional[str] = None,
+    db: Session = Depends(get_db),
+    admin: User = Depends(require_admin)
+):
+    """管理员获取用户列表"""
+    query = db.query(User)
+    
+    if role:
+        query = query.filter(User.role == role)
+    if department:
+        query = query.filter(User.department == department)
+    
+    total = query.count()
+    users = query.order_by(User.id.desc()).offset((page - 1) * page_size).limit(page_size).all()
+    
+    return {
+        "items": [
+            {
+                "id": u.id,
+                "username": u.username,
+                "employee_id": getattr(u, 'employee_id', u.username),
+                "real_name": u.real_name,
+                "nickname": getattr(u, 'nickname', ''),
+                "department": getattr(u, 'department', ''),
+                "role": u.role,
+                "is_headmaster": u.is_headmaster or u.role == "head_teacher",
+                "is_verified": getattr(u, 'is_verified', True),
+                "can_scan_unlock": getattr(u, 'can_scan_unlock', False),
+                "is_active": u.is_active,
+                "created_at": u.created_at.isoformat() if u.created_at else None
+            }
+            for u in users
+        ],
+        "total": total,
+        "page": page,
+        "page_size": page_size
+    }
+
+
+@router.put("/admin/{user_id}/permissions")
+def update_user_permissions(
+    user_id: int,
+    data: UserPermissionUpdate,
+    db: Session = Depends(get_db),
+    admin: User = Depends(require_admin)
+):
+    """管理员修改用户权限"""
+    user = db.query(User).filter(User.id == user_id).first()
+    if not user:
+        raise HTTPException(status_code=404, detail="用户不存在")
+    
+    if data.can_scan_unlock is not None:
+        user.can_scan_unlock = data.can_scan_unlock
+    if data.is_verified is not None:
+        user.is_verified = data.is_verified
+    if data.is_active is not None:
+        user.is_active = data.is_active
+    if data.is_headmaster is not None:
+        user.is_headmaster = data.is_headmaster
+    
+    db.commit()
+    
+    return {"message": "权限更新成功", "user_id": user_id}
+
+
+@router.get("/admin/stats")
+def admin_get_stats(
+    db: Session = Depends(get_db),
+    admin: User = Depends(require_admin)
+):
+    """管理员获取系统统计"""
+    total_users = db.query(User).count()
+    verified_users = db.query(User).filter(User.is_verified == True).count()
+    active_users = db.query(User).filter(User.is_active == True).count()
+    can_scan_unlock = db.query(User).filter(User.can_scan_unlock == True).count()
+    
+    # 今日签到统计
+    from datetime import date
+    today = date.today()
+    from datetime import datetime
+    today_start = datetime.combine(today, datetime.min.time())
+    today_checkins = db.query(CheckinRecord).filter(
+        CheckinRecord.checkin_time >= today_start
+    ).count()
+    
+    # 今日请假申请
+    today_leaves = db.query(Leave).filter(
+        Leave.created_at >= today_start
+    ).count()
+    
+    # 待审批请假
+    pending_leaves = db.query(Leave).filter(Leave.status == "pending").count()
+    
+    return {
+        "total_users": total_users,
+        "verified_users": verified_users,
+        "active_users": active_users,
+        "can_scan_unlock": can_scan_unlock,
+        "today_checkins": today_checkins,
+        "today_leaves": today_leaves,
         "pending_leaves": pending_leaves
     }

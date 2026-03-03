@@ -65,7 +65,7 @@ async def log_requests(request, call_next):
 app.mount("/uploads", StaticFiles(directory=settings.UPLOAD_DIR), name="uploads")
 
 # Register API routers
-from app.api import auth, devices, schedules, control, images, unlock_requests, logs  # noqa
+from app.api import auth, devices, schedules, control, images, unlock_requests, logs, unlock  # noqa
 from app.api import checkin, statistics, leave, users, achievements  # noqa
 from app.ws.handler import router as ws_router  # noqa
 
@@ -76,6 +76,7 @@ app.include_router(control.router, prefix="/api")
 app.include_router(images.router, prefix="/api")
 app.include_router(unlock_requests.router, prefix="/api")
 app.include_router(logs.router, prefix="/api")
+app.include_router(unlock.router)
 app.include_router(checkin.router)
 app.include_router(statistics.router)
 app.include_router(leave.router)
