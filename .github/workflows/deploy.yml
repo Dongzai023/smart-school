@@ -8,7 +8,7 @@ on:
 env:
   SERVER_HOST: ${{ secrets.SERVER_HOST }}
   SERVER_USER: ${{ secrets.SERVER_USER }}
-  DEPLOY_PATH: /opt/smart-school
+  DEPLOY_PATH: /home/ubuntu/smart-school
 
 jobs:
   build-frontend:
