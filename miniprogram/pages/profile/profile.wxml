@@ -1,0 +1,286 @@
+<view class="container">
+  <!-- 头部绿色背景区域 -->
+  <view class="header-bg">
+    <!-- 用户信息 -->
+    <view class="user-section">
+      <view class="avatar-area">
+        <view class="avatar-wrap">
+          <view class="avatar-outer">
+            <view class="avatar-inner">
+              <image class="avatar-img" src="{{userInfo.avatar_url ? baseUrl + userInfo.avatar_url : '/assets/CodeBubbyAssets/5_248/2.svg'}}" mode="aspectFill"></image>
+            </view>
+          </view>
+          <view class="edit-badge" bindtap="onUploadAvatar">
+            <image class="edit-icon" src="/assets/CodeBubbyAssets/5_248/3.svg" mode="aspectFit"></image>
+          </view>
+        </view>
+      </view>
+      <view class="user-name">{{userInfo.name || '未登录'}}</view>
+      <view class="user-tags">
+        <text class="user-tag-text" wx:if="{{userInfo.nickname}}">{{userInfo.nickname}}</text>
+        <text class="user-tag-dot" wx:if="{{userInfo.nickname && userInfo.department}}">·</text>
+        <text class="user-tag-text" wx:if="{{userInfo.department}}">{{userInfo.department}}</text>
+      </view>
+      <view class="user-id-wrap">
+        <view class="user-id-badge">
+          <text class="user-id-text">工号: {{userInfo.employee_id || '--'}}</text>
+        </view>
+        <view class="copy-btn" bindtap="goToEditProfile">
+          <image class="copy-icon" src="/assets/CodeBubbyAssets/5_4/17.svg" mode="aspectFit"></image>
+        </view>
+      </view>
+    </view>
+
+    <!-- 统计信息卡片 -->
+    <view class="stats-card">
+      <view class="stat-item">
+        <text class="stat-number stat-green">{{punchesCount || 0}}</text>
+        <text class="stat-label">总天数</text>
+      </view>
+      <view class="stat-item">
+        <text class="stat-number stat-green">{{attendanceRate}}%</text>
+        <text class="stat-label">出勤率</text>
+      </view>
+      <view class="stat-item">
+        <text class="stat-number stat-orange">#{{schoolRank}}</text>
+        <text class="stat-label">排名</text>
+      </view>
+      <view class="stat-item">
+        <text class="stat-number stat-purple">{{unlocked_count || 0}}</text>
+        <text class="stat-label">成就</text>
+      </view>
+    </view>
+  </view>
+
+  <!-- 主内容区 -->
+  <view class="main-content">
+    <!-- 快捷功能入口 -->
+    <view class="quick-grid">
+      <view class="quick-item" bindtap="goToMessages">
+        <view class="quick-icon quick-green">
+          <image class="quick-icon-img" src="/assets/CodeBubbyAssets/5_4/5.svg" mode="aspectFit"></image>
+        </view>
+        <text class="quick-text">消息通知</text>
+        <view class="quick-badge" wx:if="{{unreadCount > 0}}">
+          <text class="quick-badge-text">{{unreadCount}}</text>
+        </view>
+      </view>
+      <view class="quick-item" bindtap="goToLeaveApplication">
+        <view class="quick-icon quick-blue">
+          <image class="quick-icon-img" src="/assets/CodeBubbyAssets/5_4/14.svg" mode="aspectFit"></image>
+        </view>
+        <text class="quick-text">请假申请</text>
+      </view>
+
+      <view class="quick-item" bindtap="goToAchievements">
+        <view class="quick-icon quick-orange">
+          <image class="quick-icon-img" src="/assets/CodeBubbyAssets/5_4/7.svg" mode="aspectFit"></image>
+        </view>
+        <text class="quick-text">我的成就</text>
+        <view class="quick-badge badge-wide" wx:if="{{unlocked_count > 0}}">
+          <text class="quick-badge-text">{{unlocked_count}}/{{total_count}}</text>
+        </view>
+      </view>
+      <view class="quick-item" bindtap="goToSettings">
+        <view class="quick-icon quick-gray">
+          <image class="quick-icon-img" src="/assets/CodeBubbyAssets/5_4/8.svg" mode="aspectFit"></image>
+        </view>
+        <text class="quick-text">系统设置</text>
+      </view>
+    </view>
+
+    <!-- 最近活动 -->
+    <view class="section">
+      <view class="section-header">
+        <image class="section-icon" src="/assets/CodeBubbyAssets/5_4/9.svg" mode="aspectFit"></image>
+        <view class="section-title-wrap">
+          <text class="section-title">最近活动</text>
+          <text class="section-subtitle">RECENT ACTIVITY</text>
+        </view>
+      </view>
+      <view class="activity-card">
+        <view class="activity-item" wx:for="{{activities}}" wx:key="id" bindtap="viewActivityDetail" data-id="{{item.id}}">
+          <image class="activity-icon" src="{{item.icon}}" mode="aspectFit"></image>
+          <view class="activity-info">
+            <text class="activity-title">{{item.title}}</text>
+            <text class="activity-time">{{item.time}}</text>
+          </view>
+          <image class="activity-arrow" src="/assets/CodeBubbyAssets/5_4/11.svg" mode="aspectFit"></image>
+        </view>
+      </view>
+    </view>
+
+    <!-- 账户信息 -->
+    <view class="section">
+      <view class="section-header">
+        <image class="section-icon" src="/assets/CodeBubbyAssets/5_4/16.svg" mode="aspectFit"></image>
+        <text class="section-title">账户信息</text>
+      </view>
+      <view class="menu-card">
+        <view class="menu-item" bindtap="goToEditProfile">
+          <view class="menu-left">
+            <view class="menu-icon-wrap">
+              <image class="menu-icon" src="/assets/CodeBubbyAssets/5_4/17.svg" mode="aspectFit"></image>
+            </view>
+            <text class="menu-text">个人资料</text>
+          </view>
+          <view class="menu-right">
+            <text class="menu-hint">完善信息</text>
+            <image class="menu-arrow" src="/assets/CodeBubbyAssets/5_4/18.svg" mode="aspectFit"></image>
+          </view>
+        </view>
+        <view class="menu-item" bindtap="goToSecurity">
+          <view class="menu-left">
+            <view class="menu-icon-wrap">
+              <image class="menu-icon" src="/assets/CodeBubbyAssets/5_4/19.svg" mode="aspectFit"></image>
+            </view>
+            <text class="menu-text">账号安全</text>
+          </view>
+          <view class="menu-right">
+            <text class="menu-hint">已开启</text>
+            <image class="menu-arrow" src="/assets/CodeBubbyAssets/5_4/20.svg" mode="aspectFit"></image>
+          </view>
+        </view>
+        <view class="menu-item" bindtap="goToEmail">
+          <view class="menu-left">
+            <view class="menu-icon-wrap">
+              <image class="menu-icon" src="/assets/CodeBubbyAssets/5_4/21.svg" mode="aspectFit"></image>
+            </view>
+            <text class="menu-text">邮箱绑定</text>
+          </view>
+          <view class="menu-right">
+            <text class="menu-hint menu-hint-long">{{userInfo.email || '未绑定'}}</text>
+            <image class="menu-arrow" src="/assets/CodeBubbyAssets/5_4/22.svg" mode="aspectFit"></image>
+          </view>
+        </view>
+      </view>
+    </view>
+
+    <!-- 应用设置 -->
+    <view class="section">
+      <view class="section-header">
+        <image class="section-icon" src="/assets/CodeBubbyAssets/5_4/23.svg" mode="aspectFit"></image>
+        <text class="section-title">应用设置</text>
+      </view>
+      <view class="menu-card">
+        <view class="menu-item" bindtap="goToNotification">
+          <view class="menu-left">
+            <view class="menu-icon-wrap">
+              <image class="menu-icon" src="/assets/CodeBubbyAssets/5_4/24.svg" mode="aspectFit"></image>
+            </view>
+            <text class="menu-text">通知设置</text>
+          </view>
+          <view class="menu-right">
+            <text class="menu-hint">已开启</text>
+            <image class="menu-arrow" src="/assets/CodeBubbyAssets/5_4/25.svg" mode="aspectFit"></image>
+          </view>
+        </view>
+        <view class="menu-item">
+          <view class="menu-left">
+            <view class="menu-icon-wrap">
+              <image class="menu-icon" src="/assets/CodeBubbyAssets/5_4/26.svg" mode="aspectFit"></image>
+            </view>
+            <text class="menu-text">深色模式</text>
+          </view>
+          <view class="menu-right">
+            <switch class="theme-switch" checked="{{darkMode}}" bindchange="toggleDarkMode" color="#00BC7D"></switch>
+          </view>
+        </view>
+        <view class="menu-item" bindtap="goToLanguage">
+          <view class="menu-left">
+            <view class="menu-icon-wrap">
+              <image class="menu-icon" src="/assets/CodeBubbyAssets/5_4/28.svg" mode="aspectFit"></image>
+            </view>
+            <text class="menu-text">语言设置</text>
+          </view>
+          <view class="menu-right">
+            <text class="menu-hint">简体中文</text>
+            <image class="menu-arrow" src="/assets/CodeBubbyAssets/5_4/29.svg" mode="aspectFit"></image>
+          </view>
+        </view>
+      </view>
+    </view>
+
+    <!-- 其他 -->
+    <view class="section">
+      <view class="section-header">
+        <image class="section-icon" src="/assets/CodeBubbyAssets/5_4/30.svg" mode="aspectFit"></image>
+        <text class="section-title">其他</text>
+      </view>
+      <view class="menu-card">
+        <view class="menu-item" bindtap="goToHelp">
+          <view class="menu-left">
+            <view class="menu-icon-wrap">
+              <image class="menu-icon" src="/assets/CodeBubbyAssets/5_4/31.svg" mode="aspectFit"></image>
+            </view>
+            <text class="menu-text">帮助中心</text>
+          </view>
+          <view class="menu-right">
+            <image class="menu-arrow" src="/assets/CodeBubbyAssets/5_4/32.svg" mode="aspectFit"></image>
+          </view>
+        </view>
+        <view class="menu-item" bindtap="goToAbout">
+          <view class="menu-left">
+            <view class="menu-icon-wrap">
+              <image class="menu-icon" src="/assets/CodeBubbyAssets/5_4/33.svg" mode="aspectFit"></image>
+            </view>
+            <text class="menu-text">关于我们</text>
+          </view>
+          <view class="menu-right">
+            <text class="menu-hint">v1.0.0</text>
+            <image class="menu-arrow" src="/assets/CodeBubbyAssets/5_4/34.svg" mode="aspectFit"></image>
+          </view>
+        </view>
+        <view class="menu-item" bindtap="goToFeedback">
+          <view class="menu-left">
+            <view class="menu-icon-wrap">
+              <image class="menu-icon" src="/assets/CodeBubbyAssets/5_4/35.svg" mode="aspectFit"></image>
+            </view>
+            <text class="menu-text">意见反馈</text>
+          </view>
+          <view class="menu-right">
+            <image class="menu-arrow" src="/assets/CodeBubbyAssets/5_4/36.svg" mode="aspectFit"></image>
+          </view>
+        </view>
+      </view>
+    </view>
+
+    <!-- 退出登录 -->
+    <view class="logout-btn" bindtap="logout">
+      <image class="logout-icon" src="/assets/CodeBubbyAssets/5_4/37.svg" mode="aspectFit"></image>
+      <text class="logout-text">退出登录</text>
+    </view>
+
+    <!-- 底部信息 -->
+    <view class="footer">
+      <image class="footer-icon" src="/assets/CodeBubbyAssets/5_4/38.svg" mode="aspectFit"></image>
+      <text class="footer-title">清涧中学考勤系统</text>
+      <text class="footer-subtitle">DIGITAL ATTENDANCE PLATFORM</text>
+      <text class="footer-copyright">版权所有 © 2024-2026</text>
+    </view>
+  </view>
+
+</view>
+
+<!-- 底部导航 -->
+<view class="tab-bar">
+  <view class="tab-item" bindtap="switchTab" data-page="index">
+    <view class="tab-icon">
+      <image class="tab-icon-img" src="/assets/CodeBubbyAssets/5_4/1.svg" mode="aspectFit"></image>
+    </view>
+    <text class="tab-text">签到打卡</text>
+  </view>
+  <view class="tab-item" bindtap="switchTab" data-page="statistics">
+    <view class="tab-icon">
+      <image class="tab-icon-img" src="/assets/CodeBubbyAssets/5_4/2.svg" mode="aspectFit"></image>
+    </view>
+    <text class="tab-text">统计报表</text>
+  </view>
+  <view class="tab-item tab-active" bindtap="switchTab" data-page="profile">
+    <image class="tab-active-bg" src="/assets/CodeBubbyAssets/5_4/4.svg" mode="aspectFit"></image>
+    <view class="tab-icon">
+      <image class="tab-icon-img" src="/assets/CodeBubbyAssets/5_4/3.svg" mode="aspectFit"></image>
+    </view>
+    <text class="tab-text tab-text-active">个人中心</text>
+  </view>
+</view>
