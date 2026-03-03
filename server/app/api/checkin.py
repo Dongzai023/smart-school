@@ -283,10 +283,15 @@ def do_checkin(
     if existing:
         raise HTTPException(status_code=400, detail="该时段已签到")
     
+    # 获取时段标签
+    slots = get_user_time_slots(is_headmaster)
+    slot_label = slots[data.time_slot_id - 1][3] if data.time_slot_id <= len(slots) else "未知"
+    
     # 创建签到记录
     record = CheckinRecord(
         user_id=user_id,
         time_slot_id=data.time_slot_id,
+        time_slot_label=slot_label,
         status="late" if status_info["is_late"] else "signed",
         location=data.location,
         latitude=data.latitude,
