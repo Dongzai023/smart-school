@@ -182,8 +182,8 @@ async function loadData() {
   loading.value = true
   try {
     const [overviewData, usersData] = await Promise.all([
-      api.get('/api/statistics/admin/overview'),
-      api.get('/api/statistics/admin/users', { params: { page: pagination.page, page_size: pagination.pageSize, department: filters.department, period: filters.period } })
+      api.get('/statistics/admin/overview'),
+      api.get('/statistics/admin/users', { params: { page: pagination.page, page_size: pagination.pageSize, department: filters.department, period: filters.period } })
     ])
     overview.value = overviewData
     users.value = usersData.items
@@ -205,7 +205,7 @@ async function viewDetail(user) {
 
 async function loadDetail() {
   try {
-    const res = await api.get(`/api/statistics/admin/user/${selectedUser.value.id}/records`, { params: { page: detailPage.value } })
+    const res = await api.get(`/statistics/admin/user/${selectedUser.value.id}/records`, { params: { page: detailPage.value } })
     records.value = res.records
     detailTotal.value = res.total
   } catch (e) {
