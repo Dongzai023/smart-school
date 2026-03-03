@@ -72,7 +72,8 @@ async def execute_control(
         db.add(log)
 
     db.commit()
-    return {"results": results}
+    all_success = all(r.get("success", False) for r in results.values())
+    return {"results": results, "all_success": all_success}
 
 
 @router.post("/execute-group")
@@ -116,4 +117,5 @@ async def execute_group_control(
         db.add(log)
 
     db.commit()
-    return {"group_id": req.group_id, "results": results}
+    all_success = all(r.get("success", False) for r in results.values())
+    return {"group_id": req.group_id, "results": results, "all_success": all_success}

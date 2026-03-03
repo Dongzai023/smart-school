@@ -22,6 +22,11 @@ const routes = [
         component: () => import('../views/Devices.vue'),
     },
     {
+        path: '/control',
+        name: 'DeviceControl',
+        component: () => import('../views/DeviceControl.vue'),
+    },
+    {
         path: '/schedules',
         name: 'Schedules',
         component: () => import('../views/Schedules.vue'),
