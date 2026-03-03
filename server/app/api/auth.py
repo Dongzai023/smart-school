@@ -18,7 +18,8 @@ router = APIRouter(prefix="/auth", tags=["认证"])
 
 
 class LoginRequest(BaseModel):
-    username: str
+    username: str | None = None
+    employee_id: str | None = None
     password: str
 
 
@@ -43,7 +44,14 @@ class ChangePasswordRequest(BaseModel):
 @router.post("/login", response_model=LoginResponse)
 def login(req: LoginRequest, db: Session = Depends(get_db)):
     """User login."""
-    user = db.query(User).filter(User.username == req.username).first()
+    # 支持 username 或 employee_id 登录
+    if req.username:
+        user = db.query(User).filter(User.username == req.username).first()
+    elif req.employee_id:
+        user = db.query(User).filter(User.username == req.employee_id).first()
+    else:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="请提供用户名")
+    
     if not user or not verify_password(req.password, user.password_hash):
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="用户名或密码错误")
     if not user.is_active:
