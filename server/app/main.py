@@ -15,7 +15,7 @@ from app.services.auth_service import hash_password
 from app.services.scheduler import start_scheduler, load_schedules, list_jobs
 
 # Import all models to ensure they are registered
-from app.models import user, device, schedule, lock_image, log  # noqa
+from app.models import user, device, schedule, lock_image, log, time_slot, checkin_record, leave  # noqa
 
 # Configure logging
 logging.basicConfig(
@@ -66,6 +66,7 @@ app.mount("/uploads", StaticFiles(directory=settings.UPLOAD_DIR), name="uploads"
 
 # Register API routers
 from app.api import auth, devices, schedules, control, images, unlock_requests, logs  # noqa
+from app.api import checkin, statistics, leave, users, achievements  # noqa
 from app.ws.handler import router as ws_router  # noqa
 
 app.include_router(auth.router, prefix="/api")
@@ -75,6 +76,11 @@ app.include_router(control.router, prefix="/api")
 app.include_router(images.router, prefix="/api")
 app.include_router(unlock_requests.router, prefix="/api")
 app.include_router(logs.router, prefix="/api")
+app.include_router(checkin.router)
+app.include_router(statistics.router)
+app.include_router(leave.router)
+app.include_router(users.router)
+app.include_router(achievements.router)
 app.include_router(ws_router) # WebSocket prefix /ws is already defined in handler
 
 
