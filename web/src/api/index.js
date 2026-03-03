@@ -91,3 +91,10 @@ export const unlockApi = {
 export const logApi = {
     list: (params) => api.get('/logs', { params }),
 }
+
+/* ========== Users (签到用户管理) ========== */
+export const userApi = {
+    list: (params) => api.get('/users/admin/list', { params }),
+    updatePermissions: (userId, data) => api.put(`/users/admin/${userId}/permissions`, data),
+    getStats: () => api.get('/users/admin/stats'),
+}
