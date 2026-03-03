@@ -1,14 +1,14 @@
 """统计API"""
 
 from datetime import datetime, date, timedelta
-from fastapi import APIRouter, Depends, Query
+from fastapi import APIRouter, Depends, Query, HTTPException
 from sqlalchemy.orm import Session
 from sqlalchemy import func
 
 from app.database import get_db
 from app.models.user import User
 from app.models.checkin_record import CheckinRecord
-from app.services.auth_service import get_current_user
+from app.services.auth_service import get_current_user, require_admin
 
 router = APIRouter(prefix="/api/statistics", tags=["统计"])
 
@@ -289,3 +289,160 @@ def get_records(
         })
     
     return {"records": records, "total": total}
+
+
+# ========================
+# 管理员API
+# ========================
+
+@router.get("/admin/overview")
+def admin_get_overview(
+    db: Session = Depends(get_db),
+    admin: User = Depends(require_admin)
+):
+    """管理员获取全校签到概览"""
+    today = date.today()
+    
+    # 今日应签到人数
+    total_users = db.query(User).filter(User.is_active == True).count()
+    
+    # 今日已签到人数
+    today_start = datetime.combine(today, datetime.min.time())
+    signed_today = db.query(func.count(func.distinct(CheckinRecord.user_id))).filter(
+        CheckinRecord.checkin_date == today,
+        CheckinRecord.status.in_(["signed", "normal", "late"])
+    ).scalar() or 0
+    
+    # 今日迟到人数
+    late_today = db.query(func.count(func.distinct(CheckinRecord.user_id))).filter(
+        CheckinRecord.checkin_date == today,
+        CheckinRecord.status == "late"
+    ).scalar() or 0
+    
+    # 今日未签人数
+    absent_today = total_users - signed_today
+    
+    return {
+        "total_users": total_users,
+        "signed_today": signed_today,
+        "late_today": late_today,
+        "absent_today": absent_today,
+        "attendance_rate": round(signed_today / total_users * 100, 1) if total_users > 0 else 0
+    }
+
+
+@router.get("/admin/users")
+def admin_get_user_stats(
+    page: int = Query(1, ge=1),
+    page_size: int = Query(20, ge=1, le=100),
+    department: str = Query(None, description="部门筛选"),
+    period: str = Query("week", description="统计周期"),
+    db: Session = Depends(get_db),
+    admin: User = Depends(require_admin)
+):
+    """管理员获取所有用户的签到统计"""
+    start_date, end_date = _get_date_range(period)
+    
+    # 获取所有用户
+    query = db.query(User).filter(User.is_active == True)
+    if department:
+        query = query.filter(User.department == department)
+    
+    total = query.count()
+    users = query.offset((page - 1) * page_size).limit(page_size).all()
+    
+    # 获取部门列表
+    departments = db.query(func.distinct(User.department)).filter(
+        User.department != None,
+        User.department != ""
+    ).all()
+    department_list = [d[0] for d in departments]
+    
+    result = []
+    for user in users:
+        # 统计该用户在不同时段的签到情况
+        records = db.query(CheckinRecord).filter(
+            CheckinRecord.user_id == user.id,
+            CheckinRecord.checkin_date >= start_date,
+            CheckinRecord.checkin_date <= end_date
+        ).all()
+        
+        signed = sum(1 for r in records if r.status in ("signed", "normal"))
+        late = sum(1 for r in records if r.status == "late")
+        absent = sum(1 for r in records if r.status == "absent")
+        
+        # 计算应签到次数（工作日 * 时段数）
+        work_days = sum(1 for i in range((end_date - start_date).days + 1)
+                       if (start_date + timedelta(days=i)).weekday() < 5)
+        is_headmaster = user.is_headmaster or user.role == "head_teacher"
+        slot_count = len(get_user_time_slots(is_headmaster))
+        expected = work_days * slot_count
+        
+        result.append({
+            "id": user.id,
+            "username": user.username,
+            "employee_id": user.employee_id or user.username,
+            "real_name": user.real_name,
+            "department": user.department or "",
+            "role": user.role,
+            "signed_count": signed,
+            "late_count": late,
+            "absent_count": absent,
+            "expected_count": expected,
+            "attendance_rate": round(signed / expected * 100, 1) if expected > 0 else 0
+        })
+    
+    return {
+        "items": result,
+        "total": total,
+        "page": page,
+        "page_size": page_size,
+        "departments": department_list
+    }
+
+
+@router.get("/admin/user/{user_id}/records")
+def admin_get_user_records(
+    user_id: int,
+    page: int = Query(1, ge=1),
+    page_size: int = Query(30, ge=1, le=50),
+    db: Session = Depends(get_db),
+    admin: User = Depends(require_admin)
+):
+    """管理员获取指定用户的签到记录"""
+    user = db.query(User).filter(User.id == user_id).first()
+    if not user:
+        raise HTTPException(status_code=404, detail="用户不存在")
+    
+    # 查询签到记录
+    records_query = db.query(CheckinRecord).filter(
+        CheckinRecord.user_id == user_id
+    ).order_by(CheckinRecord.checkin_date.desc(), CheckinRecord.time_slot_id)
+    
+    total = records_query.count()
+    records = records_query.offset((page - 1) * page_size).limit(page_size).all()
+    
+    weekday_names = ['星期一', '星期二', '星期三', '星期四', '星期五', '星期六', '星期日']
+    
+    result = []
+    for r in records:
+        result.append({
+            "id": r.id,
+            "date": r.checkin_date.strftime("%Y-%m-%d") if r.checkin_date else None,
+            "weekday": weekday_names[r.checkin_date.weekday()] if r.checkin_date else "",
+            "time_slot_id": r.time_slot_id,
+            "time": r.checkin_time.strftime("%H:%M") if r.checkin_time else "",
+            "status": r.status,
+            "location": r.location or ""
+        })
+    
+    return {
+        "user": {
+            "id": user.id,
+            "real_name": user.real_name,
+            "employee_id": user.employee_id or user.username,
+            "department": user.department or ""
+        },
+        "records": result,
+        "total": total
+    }

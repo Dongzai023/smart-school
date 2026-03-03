@@ -51,6 +51,7 @@ const navItems = computed(() => {
     { path: '/devices', label: '设备管理', icon: 'Monitor' },
     { path: '/control', label: '设备控制', icon: 'Operation' },
     { path: '/users', label: '用户管理', icon: 'User' },
+    { path: '/checkin-stats', label: '签到统计', icon: 'DataAnalysis' },
     { path: '/schedules', label: '时间策略', icon: 'Clock' },
     { path: '/images', label: '锁屏画面', icon: 'Picture' },
     { path: '/unlock-requests', label: '解锁申请', icon: 'Unlock' },
