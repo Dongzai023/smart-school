@@ -85,7 +85,7 @@
     <view class="schedule-list">
       <view wx:for="{{todaySchedule}}" wx:key="index" class="schedule-item item-{{item.status}}">
         <text class="schedule-time">{{item.time_slot.start_time}}-{{item.time_slot.end_time}}</text>
-        <text class="schedule-status status-{{item.status}}">{{item.status === 'signed' ? '已签' : (item.status === 'late' ? '迟到' : (item.status === 'unsigned' ? '未签' : '待签'))}}</text>
+        <text class="schedule-status status-{{item.status}}">{{item.status === 'signed' ? '已签' : (item.status === 'late' ? '迟到' : (item.status === 'absent' ? '未签' : (item.status === 'unsigned' ? '未签' : '待签')))}}</text>
       </view>
     </view>
   </view>
