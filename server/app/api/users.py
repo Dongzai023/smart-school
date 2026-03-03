@@ -271,6 +271,107 @@ def admin_list_users(
     }
 
 
+class UserCreate(BaseModel):
+    employee_id: str
+    real_name: str
+    password: str
+    department: Optional[str] = ""
+    role: str = "teacher"
+
+
+class UserUpdate(BaseModel):
+    real_name: Optional[str] = None
+    department: Optional[str] = None
+    role: Optional[str] = None
+    new_password: Optional[str] = None
+
+
+@router.post("/admin/create")
+def admin_create_user(
+    data: UserCreate,
+    db: Session = Depends(get_db),
+    admin: User = Depends(require_admin)
+):
+    """管理员创建用户"""
+    # 检查工号是否已存在
+    existing = db.query(User).filter(
+        (User.username == data.employee_id) | 
+        (User.employee_id == data.employee_id)
+    ).first()
+    if existing:
+        raise HTTPException(status_code=400, detail="该工号已存在")
+    
+    # 创建用户
+    new_user = User(
+        username=data.employee_id,
+        employee_id=data.employee_id,
+        real_name=data.real_name,
+        password_hash=hash_password(data.password),
+        department=data.department or "",
+        role=data.role,
+        is_active=True,
+    )
+    
+    # 设置额外字段
+    try:
+        new_user.is_verified = True
+        new_user.can_scan_unlock = False
+    except Exception:
+        pass
+    
+    db.add(new_user)
+    db.commit()
+    db.refresh(new_user)
+    
+    return {"id": new_user.id, "username": new_user.username, "message": "用户创建成功"}
+
+
+@router.put("/admin/{user_id}")
+def admin_update_user(
+    user_id: int,
+    data: UserUpdate,
+    db: Session = Depends(get_db),
+    admin: User = Depends(require_admin)
+):
+    """管理员更新用户信息"""
+    user = db.query(User).filter(User.id == user_id).first()
+    if not user:
+        raise HTTPException(status_code=404, detail="用户不存在")
+    
+    if data.real_name is not None:
+        user.real_name = data.real_name
+    if data.department is not None:
+        user.department = data.department
+    if data.role is not None:
+        user.role = data.role
+    if data.new_password:
+        user.password_hash = hash_password(data.new_password)
+    
+    db.commit()
+    
+    return {"message": "用户更新成功", "user_id": user_id}
+
+
+@router.delete("/admin/{user_id}")
+def admin_delete_user(
+    user_id: int,
+    db: Session = Depends(get_db),
+    admin: User = Depends(require_admin)
+):
+    """管理员删除用户"""
+    user = db.query(User).filter(User.id == user_id).first()
+    if not user:
+        raise HTTPException(status_code=404, detail="用户不存在")
+    
+    if user.role == "admin":
+        raise HTTPException(status_code=400, detail="不能删除管理员账号")
+    
+    db.delete(user)
+    db.commit()
+    
+    return {"message": "用户删除成功"}
+
+
 @router.put("/admin/{user_id}/permissions")
 def update_user_permissions(
     user_id: int,
@@ -304,26 +405,36 @@ def admin_get_stats(
 ):
     """管理员获取系统统计"""
     total_users = db.query(User).count()
-    verified_users = db.query(User).filter(User.is_verified == True).count()
     active_users = db.query(User).filter(User.is_active == True).count()
-    can_scan_unlock = db.query(User).filter(User.can_scan_unlock == True).count()
+    
+    # 检查字段是否存在
+    try:
+        verified_users = db.query(User).filter(User.is_verified == True).count()
+    except AttributeError:
+        verified_users = total_users
+    
+    try:
+        can_scan_unlock = db.query(User).filter(User.can_scan_unlock == True).count()
+    except AttributeError:
+        can_scan_unlock = 0
     
     # 今日签到统计
-    from datetime import date
+    from datetime import date, datetime
     today = date.today()
-    from datetime import datetime
     today_start = datetime.combine(today, datetime.min.time())
     today_checkins = db.query(CheckinRecord).filter(
         CheckinRecord.checkin_time >= today_start
     ).count()
     
-    # 今日请假申请
-    today_leaves = db.query(Leave).filter(
-        Leave.created_at >= today_start
-    ).count()
-    
-    # 待审批请假
-    pending_leaves = db.query(Leave).filter(Leave.status == "pending").count()
+    # 请假统计 - 兼容不同字段名
+    try:
+        today_leaves = db.query(Leave).filter(
+            Leave.created_at >= today_start
+        ).count()
+        pending_leaves = db.query(Leave).filter(Leave.status == "pending").count()
+    except Exception:
+        today_leaves = 0
+        pending_leaves = 0
     
     return {
         "total_users": total_users,

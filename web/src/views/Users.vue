@@ -43,42 +43,52 @@
             <el-option label="班主任" value="head_teacher" />
             <el-option label="管理员" value="admin" />
           </el-select>
-          <el-button :icon="Refresh" @click="loadData" :loading="loading">刷新</el-button>
+          <el-button type="primary" :icon="Plus" @click="openAddDialog">新增用户</el-button>
+          <el-button :icon="Refresh" @click="loadData" :loading="loading" style="margin-left:10px">刷新</el-button>
         </div>
       </div>
 
       <el-table :data="users" stripe v-loading="loading">
-        <el-table-column prop="employee_id" label="工号" width="100" />
-        <el-table-column prop="real_name" label="姓名" min-width="100" />
-        <el-table-column prop="department" label="部门/科室" width="120" />
-        <el-table-column label="角色" width="100">
+        <el-table-column prop="employee_id" label="工号" min-width="100">
+          <template #default="{ row }">
+            <span class="nowrap">{{ row.employee_id || row.username }}</span>
+          </template>
+        </el-table-column>
+        <el-table-column prop="real_name" label="姓名" min-width="80" />
+        <el-table-column prop="department" label="部门" min-width="100" />
+        <el-table-column label="角色" min-width="80">
           <template #default="{ row }">
             <el-tag :type="roleType(row.role)" size="small">{{ roleLabel(row.role) }}</el-tag>
           </template>
         </el-table-column>
-        <el-table-column label="可扫码解锁" width="110">
+        <el-table-column label="可解锁" min-width="70">
           <template #default="{ row }">
             <el-switch v-model="row.can_scan_unlock" @change="toggleScanUnlock(row)" :loading="row._loading" />
           </template>
         </el-table-column>
-        <el-table-column label="已认证" width="90">
+        <el-table-column label="已认证" min-width="70">
           <template #default="{ row }">
             <el-switch v-model="row.is_verified" @change="toggleVerified(row)" :loading="row._loading" />
           </template>
         </el-table-column>
-        <el-table-column label="账号状态" width="90">
+        <el-table-column label="状态" min-width="60">
           <template #default="{ row }">
             <el-tag :type="row.is_active ? 'success' : 'danger'" size="small">{{ row.is_active ? '启用' : '禁用' }}</el-tag>
           </template>
         </el-table-column>
-        <el-table-column label="班主任" width="80">
+        <el-table-column label="班主任" min-width="60">
           <template #default="{ row }">
             <el-switch v-model="row.is_headmaster" @change="toggleHeadmaster(row)" :loading="row._loading" />
           </template>
         </el-table-column>
-        <el-table-column label="注册时间" width="170">
+        <el-table-column label="操作" width="120" fixed="right">
           <template #default="{ row }">
-            {{ formatDate(row.created_at) }}
+            <el-button size="small" type="primary" link @click="openEditDialog(row)">编辑</el-button>
+            <el-popconfirm title="确定删除此用户?" @confirm="deleteUser(row)">
+              <template #reference>
+                <el-button size="small" type="danger" link>删除</el-button>
+              </template>
+            </el-popconfirm>
           </template>
         </el-table-column>
       </el-table>
@@ -111,22 +121,92 @@
         <el-button @click="showDetailDialog = false">关闭</el-button>
       </template>
     </el-dialog>
+
+    <!-- 新增用户对话框 -->
+    <el-dialog v-model="showAddDialog" title="新增用户" width="500">
+      <el-form :model="userForm" label-width="80px">
+        <el-form-item label="工号" required>
+          <el-input v-model="userForm.employee_id" placeholder="请输入工号" />
+        </el-form-item>
+        <el-form-item label="姓名" required>
+          <el-input v-model="userForm.real_name" placeholder="请输入姓名" />
+        </el-form-item>
+        <el-form-item label="初始密码" required>
+          <el-input v-model="userForm.password" type="password" placeholder="请输入初始密码" show-password />
+        </el-form-item>
+        <el-form-item label="部门">
+          <el-input v-model="userForm.department" placeholder="请输入部门" />
+        </el-form-item>
+        <el-form-item label="角色">
+          <el-select v-model="userForm.role" placeholder="请选择角色">
+            <el-option label="教师" value="teacher" />
+            <el-option label="班主任" value="head_teacher" />
+            <el-option label="管理员" value="admin" />
+          </el-select>
+        </el-form-item>
+      </el-form>
+      <template #footer>
+        <el-button @click="showAddDialog = false">取消</el-button>
+        <el-button type="primary" @click="createUser" :loading="saving">确定</el-button>
+      </template>
+    </el-dialog>
+
+    <!-- 编辑用户对话框 -->
+    <el-dialog v-model="showEditDialog" title="编辑用户" width="500">
+      <el-form :model="userForm" label-width="80px">
+        <el-form-item label="工号">
+          <el-input v-model="userForm.employee_id" disabled />
+        </el-form-item>
+        <el-form-item label="姓名">
+          <el-input v-model="userForm.real_name" placeholder="请输入姓名" />
+        </el-form-item>
+        <el-form-item label="部门">
+          <el-input v-model="userForm.department" placeholder="请输入部门" />
+        </el-form-item>
+        <el-form-item label="角色">
+          <el-select v-model="userForm.role" placeholder="请选择角色">
+            <el-option label="教师" value="teacher" />
+            <el-option label="班主任" value="head_teacher" />
+            <el-option label="管理员" value="admin" />
+          </el-select>
+        </el-form-item>
+        <el-form-item label="重置密码">
+          <el-input v-model="userForm.new_password" type="password" placeholder="留空则不修改密码" show-password />
+        </el-form-item>
+      </el-form>
+      <template #footer>
+        <el-button @click="showEditDialog = false">取消</el-button>
+        <el-button type="primary" @click="updateUser" :loading="saving">确定</el-button>
+      </template>
+    </el-dialog>
   </div>
 </template>
 
 <script setup>
 import { ref, reactive, onMounted } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
-import { Refresh } from '@element-plus/icons-vue'
+import { Refresh, Plus } from '@element-plus/icons-vue'
 import { userApi } from '../api'
 
 const loading = ref(false)
+const saving = ref(false)
 const users = ref([])
 const stats = ref({})
 const filters = reactive({ role: null })
 const pagination = reactive({ page: 1, pageSize: 50, total: 0 })
 const showDetailDialog = ref(false)
+const showAddDialog = ref(false)
+const showEditDialog = ref(false)
 const selectedUser = ref(null)
+const userForm = reactive({
+  id: null,
+  employee_id: '',
+  real_name: '',
+  password: '',
+  new_password: '',
+  department: '',
+  role: 'teacher'
+})
 
 function roleLabel(role) {
   const labels = { admin: '管理员', head_teacher: '班主任', teacher: '教师' }
@@ -206,6 +286,84 @@ async function toggleHeadmaster(user) {
   }
 }
 
+function openAddDialog() {
+  Object.assign(userForm, {
+    id: null,
+    employee_id: '',
+    real_name: '',
+    password: '',
+    new_password: '',
+    department: '',
+    role: 'teacher'
+  })
+  showAddDialog.value = true
+}
+
+function openEditDialog(user) {
+  selectedUser.value = user
+  Object.assign(userForm, {
+    id: user.id,
+    employee_id: user.employee_id || user.username,
+    real_name: user.real_name,
+    password: '',
+    new_password: '',
+    department: user.department || '',
+    role: user.role
+  })
+  showEditDialog.value = true
+}
+
+async function createUser() {
+  if (!userForm.employee_id || !userForm.real_name || !userForm.password) {
+    ElMessage.warning('请填写工号、姓名和密码')
+    return
+  }
+  saving.value = true
+  try {
+    await userApi.create(userForm)
+    ElMessage.success('用户创建成功')
+    showAddDialog.value = false
+    loadData()
+  } catch (e) {
+    ElMessage.error(e.message || '创建失败')
+  } finally {
+    saving.value = false
+  }
+}
+
+async function updateUser() {
+  if (!userForm.real_name) {
+    ElMessage.warning('请填写姓名')
+    return
+  }
+  saving.value = true
+  try {
+    await userApi.update(userForm.id, {
+      real_name: userForm.real_name,
+      department: userForm.department,
+      role: userForm.role,
+      new_password: userForm.new_password || undefined
+    })
+    ElMessage.success('用户更新成功')
+    showEditDialog.value = false
+    loadData()
+  } catch (e) {
+    ElMessage.error(e.message || '更新失败')
+  } finally {
+    saving.value = false
+  }
+}
+
+async function deleteUser(user) {
+  try {
+    await userApi.delete(user.id)
+    ElMessage.success('用户已删除')
+    loadData()
+  } catch (e) {
+    ElMessage.error(e.message || '删除失败')
+  }
+}
+
 onMounted(loadData)
 </script>
 
@@ -247,5 +405,9 @@ onMounted(loadData)
   margin-top: 20px;
   display: flex;
   justify-content: flex-end;
+}
+
+.nowrap {
+  white-space: nowrap;
 }
 </style>

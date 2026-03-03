@@ -63,11 +63,15 @@ def login(req: LoginRequest, db: Session = Depends(get_db)):
         user={
             "id": user.id, 
             "username": user.username, 
+            "employee_id": getattr(user, 'employee_id', user.username),
             "name": user.real_name,
             "real_name": user.real_name, 
+            "nickname": getattr(user, 'nickname', ''),
+            "department": getattr(user, 'department', ''),
             "role": user.role,
             "is_headmaster": user.is_headmaster or user.role == "head_teacher",
-            "is_verified": True,
+            "is_verified": getattr(user, 'is_verified', True),
+            "can_scan_unlock": getattr(user, 'can_scan_unlock', False),
         },
     )
 

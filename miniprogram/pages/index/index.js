@@ -60,12 +60,10 @@ Page({
   // 加载用户信息
   loadUserInfo() {
     const app = getApp();
-    if (app.globalData.userInfo) {
-      this.setData({ userInfo: app.globalData.userInfo });
-      return Promise.resolve(app.globalData.userInfo);
-    }
+    // 每次都从 API 获取最新用户信息
     return api.getMe()
       .then(userInfo => {
+        console.log('用户信息:', userInfo);
         app.globalData.userInfo = userInfo;
         wx.setStorageSync('userInfo', userInfo);
         this.setData({ userInfo });
@@ -73,6 +71,11 @@ Page({
       })
       .catch(err => {
         console.error('获取用户信息失败', err.message);
+        // 如果 API 失败，尝试使用缓存
+        const cached = wx.getStorageSync('userInfo');
+        if (cached) {
+          this.setData({ userInfo: cached });
+        }
         throw err;
       });
   },

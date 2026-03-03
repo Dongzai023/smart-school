@@ -6,8 +6,8 @@
     <!-- Sidebar -->
     <aside class="sidebar">
       <div class="sidebar-header">
-        <h1>🖥️ 希沃管理</h1>
-        <div class="subtitle">Seewo Device Manager</div>
+        <h1>🏫 清涧中学智慧校园</h1>
+        <div class="subtitle">Smart Campus Manager</div>
       </div>
       <nav class="sidebar-nav">
         <router-link v-for="item in navItems" :key="item.path" :to="item.path"

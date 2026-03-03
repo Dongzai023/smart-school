@@ -42,15 +42,17 @@
             <text class="badge-text">已认证教师</text>
           </view>
         </view>
-        <view class="user-tags-row">
-          <view class="user-tag" wx:if="{{userInfo.department}}">
-            <image class="tag-icon" src="/assets/CodeBubbyAssets/2_423/1.svg" mode="aspectFit"></image>
-            <text class="tag-name">{{userInfo.department}}</text>
-          </view>
+        <view class="user-tags-row" wx:if="{{userInfo.nickname || userInfo.department}}">
+
           <view class="user-tag" wx:if="{{userInfo.nickname}}">
             <image class="tag-icon" src="/assets/CodeBubbyAssets/2_423/2.svg" mode="aspectFit"></image>
             <text class="tag-name">{{userInfo.nickname}}</text>
           </view>
+          <view class="user-tag" wx:if="{{userInfo.department}}">
+            <image class="tag-icon" src="/assets/CodeBubbyAssets/2_423/1.svg" mode="aspectFit"></image>
+            <text class="tag-name">{{userInfo.department}}</text>
+          </view>
+
         </view>
       </view>
       
@@ -83,7 +85,7 @@
     <view class="schedule-list">
       <view wx:for="{{todaySchedule}}" wx:key="index" class="schedule-item item-{{item.status}}">
         <text class="schedule-time">{{item.time_slot.start_time}}-{{item.time_slot.end_time}}</text>
-        <text class="schedule-status status-{{item.status}}">{{item.status === 'signed' ? '已签' : (item.status === 'late' ? '迟到' : (item.status === 'absent' ? '缺勤' : (item.status === 'unsigned' ? '未签' : '待签')))}}</text>
+        <text class="schedule-status status-{{item.status}}">{{item.status === 'signed' ? '已签' : (item.status === 'late' ? '迟到' : (item.status === 'unsigned' ? '未签' : '待签'))}}</text>
       </view>
     </view>
   </view>

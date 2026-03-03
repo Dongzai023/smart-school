@@ -22,7 +22,13 @@ def hash_password(password: str) -> str:
 
 
 def verify_password(plain: str, hashed: str) -> bool:
-    return pwd_context.verify(plain, hashed)
+    # 支持 pbkdf2_sha256 格式
+    if hashed.startswith("$pbkdf2"):
+        return pwd_context.verify(plain, hashed)
+    # 兼容旧的 SHA256 格式
+    import hashlib
+    hashed_sha256 = hashlib.sha256(plain.encode()).hexdigest()
+    return hashed_sha256 == hashed
 
 
 def create_access_token(data: dict, expires_delta: Optional[timedelta] = None) -> str:

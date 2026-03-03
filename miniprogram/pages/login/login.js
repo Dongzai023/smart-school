@@ -43,9 +43,9 @@ Page({
         // 保存 token 和用户信息到全局 + 本地存储
         const app = getApp();
         app.globalData.token = res.access_token;
-        app.globalData.userInfo = res.teacher;
+        app.globalData.userInfo = res.user;
         wx.setStorageSync('token', res.access_token);
-        wx.setStorageSync('userInfo', res.teacher);
+        wx.setStorageSync('userInfo', res.user);
 
         wx.showToast({ title: '登录成功', icon: 'success' });
         setTimeout(() => {

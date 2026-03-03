@@ -23,7 +23,7 @@ const API = {
     STATS_TIMESLOT: '/api/statistics/timeslot',
     STATS_RECORDS: '/api/statistics/records',
     ACHIEVEMENTS: '/api/achievements',
-    LEAVE_APPLY: '/api/leave/',
+    LEAVE_APPLY: '/api/leave',
     LEAVE_MY_LIST: '/api/leave/my',
 };
 

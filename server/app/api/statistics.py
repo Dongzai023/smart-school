@@ -1,121 +1,291 @@
 """统计API"""
 
 from datetime import datetime, date, timedelta
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, Query
 from sqlalchemy.orm import Session
 from sqlalchemy import func
 
 from app.database import get_db
 from app.models.user import User
 from app.models.checkin_record import CheckinRecord
-from app.models.time_slot import TimeSlot
+from app.services.auth_service import get_current_user
 
 router = APIRouter(prefix="/api/statistics", tags=["统计"])
 
 
-@router.get("/overview")
-def get_overview(period: str = "week", db: Session = Depends(get_db), user_id: int = 1):
-    """获取统计概览"""
+def _get_date_range(period: str):
+    """根据周期返回起止日期"""
     today = date.today()
-    
     if period == "week":
-        start_date = today - timedelta(days=7)
+        # 本周一到今天
+        start = today - timedelta(days=today.weekday())
     elif period == "month":
-        start_date = today - timedelta(days=30)
+        start = today.replace(day=1)
+    elif period == "semester":
+        # 简化：近 180 天
+        start = today - timedelta(days=180)
     else:
-        start_date = today - timedelta(days=7)
+        start = today - timedelta(days=7)
+    return start, today
+
+
+def get_user_time_slots(is_headmaster: bool = False):
+    """获取用户对应的时间段配置"""
+    if is_headmaster:
+        return [
+            {"id": 1, "label": "早自习", "start": "06:20", "normal_end": "07:30", "late_end": "09:20"},
+            {"id": 2, "label": "下午", "start": "13:30", "normal_end": "14:10", "late_end": "15:10"},
+            {"id": 3, "label": "傍晚", "start": "16:30", "normal_end": "17:40", "late_end": "18:00"},
+            {"id": 4, "label": "晚自习", "start": "18:00", "normal_end": "19:20", "late_end": "19:20"},
+        ]
+    else:
+        return [
+            {"id": 1, "label": "上午", "start": "07:30", "normal_end": "08:10", "late_end": "10:10"},
+            {"id": 2, "label": "中午", "start": "10:40", "normal_end": "12:00", "late_end": "12:00"},
+            {"id": 3, "label": "下午", "start": "13:30", "normal_end": "14:10", "late_end": "16:00"},
+            {"id": 4, "label": "晚自习", "start": "16:30", "normal_end": "17:30", "late_end": "17:30"},
+        ]
+
+
+@router.get("/overview")
+def get_overview(
+    period: str = Query("week", description="周期: week/month/semester"),
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    """获取统计概览"""
+    start_date, end_date = _get_date_range(period)
     
-    start_datetime = datetime.combine(start_date, datetime.min.time())
-    
-    # 获取该用户的签到记录
+    # 查询该时段内所有签到记录
     records = db.query(CheckinRecord).filter(
-        CheckinRecord.user_id == user_id,
-        CheckinRecord.checkin_time >= start_datetime
+        CheckinRecord.user_id == current_user.id,
+        CheckinRecord.checkin_date >= start_date,
+        CheckinRecord.checkin_date <= end_date
     ).all()
     
+    signed_count = sum(1 for r in records if r.status in ("signed", "normal"))
+    late_count = sum(1 for r in records if r.status == "late")
+    absent_count = sum(1 for r in records if r.status == "absent")
     total = len(records)
-    on_time = len([r for r in records if r.status == "signed"])
-    late = len([r for r in records if r.status == "late"])
-    absent = 0  # 可以根据时间槽数量计算
+    
+    # 出勤率：(正常+迟到) / 总记录
+    # 如果没有记录，基于工作日 * 时段数估算总应签次数
+    if total > 0:
+        attendance_rate = round(signed_count / total * 100, 1)
+    else:
+        # 估算：工作日天数 * 4 个时段
+        work_days = sum(1 for i in range((end_date - start_date).days + 1)
+                       if (start_date + timedelta(days=i)).weekday() < 5)
+        is_headmaster = current_user.is_headmaster or current_user.role == "head_teacher"
+        slot_count = len(get_user_time_slots(is_headmaster))
+        estimated_total = work_days * slot_count
+        attendance_rate = round(signed_count / estimated_total * 100, 1) if estimated_total > 0 else 0
+    
+    # 全校排名
+    rank_query = db.query(
+        CheckinRecord.user_id,
+        func.count(CheckinRecord.id).label("cnt")
+    ).filter(
+        CheckinRecord.status.in_(["signed", "normal", "late"]),
+        CheckinRecord.checkin_date >= start_date,
+        CheckinRecord.checkin_date <= end_date
+    ).group_by(
+        CheckinRecord.user_id
+    ).order_by(
+        func.count(CheckinRecord.id).desc()
+    ).all()
+    
+    school_rank = 1
+    for idx, r in enumerate(rank_query):
+        if r.user_id == current_user.id:
+            school_rank = idx + 1
+            break
+    
+    # 排名评价
+    if school_rank <= 10:
+        rank_label = "卓越"
+    elif school_rank <= 30:
+        rank_label = "优秀"
+    elif school_rank <= 60:
+        rank_label = "良好"
+    else:
+        rank_label = "一般"
     
     return {
-        "total": total,
-        "on_time": on_time,
-        "late": late,
-        "absent": absent,
-        "rate": round((on_time / total * 100) if total > 0 else 0, 1)
+        "attendance_rate": attendance_rate,
+        "signed_count": signed_count,
+        "late_count": late_count,
+        "absent_count": absent_count,
+        "school_rank": school_rank,
+        "rank_label": rank_label
     }
 
 
 @router.get("/trend")
-def get_trend(period: str = "week", db: Session = Depends(get_db), user_id: int = 1):
+def get_trend(
+    period: str = Query("week", description="周期: week/month/semester"),
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
     """获取签到趋势"""
     today = date.today()
-    days = 7 if period == "week" else 30
+    # 本周一
+    monday = today - timedelta(days=today.weekday())
+    sunday = monday + timedelta(days=6)
+    
+    is_headmaster = current_user.is_headmaster or current_user.role == "head_teacher"
+    slot_count = len(get_user_time_slots(is_headmaster))
+    day_labels = ["周一", "周二", "周三", "周四", "周五", "周六", "周日"]
     
     result = []
-    for i in range(days):
-        day = today - timedelta(days=days - i - 1)
-        day_start = datetime.combine(day, datetime.min.time())
-        day_end = datetime.combine(day, datetime.max.time())
+    for i in range(7):
+        day_date = monday + timedelta(days=i)
+        day_label = day_labels[i]
         
-        count = db.query(CheckinRecord).filter(
-            CheckinRecord.user_id == user_id,
-            CheckinRecord.checkin_time >= day_start,
-            CheckinRecord.checkin_time <= day_end
-        ).count()
+        # 查询当天签到数
+        count = db.query(func.count(CheckinRecord.id)).filter(
+            CheckinRecord.user_id == current_user.id,
+            CheckinRecord.checkin_date == day_date,
+            CheckinRecord.status.in_(["signed", "normal", "late"])
+        ).scalar() or 0
+        
+        # 判断状态
+        if day_date > today:
+            status = "none"
+        elif count >= slot_count:
+            status = "full"
+        elif count > 0:
+            status = "partial"
+        else:
+            status = "absent"
         
         result.append({
-            "date": day.strftime("%Y-%m-%d"),
-            "count": count
+            "day_label": day_label,
+            "date": day_date.strftime("%Y-%m-%d"),
+            "status": status,
+            "signed_count": count,
+            "total_slots": slot_count
         })
     
-    return result
+    return {"days": result}
 
 
 @router.get("/timeslot")
-def get_timeslot_stats(period: str = "week", db: Session = Depends(get_db), user_id: int = 1):
+def get_timeslot_stats(
+    period: str = Query("week", description="周期: week/month/semester"),
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
     """获取时段分析"""
-    today = date.today()
-    start_date = today - timedelta(days=7 if period == "week" else 30)
-    start_datetime = datetime.combine(start_date, datetime.min.time())
+    start_date, end_date = _get_date_range(period)
     
-    # 获取该用户在各时间段的签到统计
-    time_slots = db.query(TimeSlot).all()
+    # 工作日天数
+    work_days = sum(1 for i in range((end_date - start_date).days + 1)
+                   if (start_date + timedelta(days=i)).weekday() < 5)
+    
+    is_headmaster = current_user.is_headmaster or current_user.role == "head_teacher"
+    slots = get_user_time_slots(is_headmaster)
     
     result = []
-    for slot in time_slots:
-        count = db.query(CheckinRecord).filter(
-            CheckinRecord.user_id == user_id,
-            CheckinRecord.time_slot_id == slot.id,
-            CheckinRecord.checkin_time >= start_datetime
-        ).count()
+    for slot in slots:
+        signed = db.query(func.count(CheckinRecord.id)).filter(
+            CheckinRecord.user_id == current_user.id,
+            CheckinRecord.time_slot_id == slot["id"],
+            CheckinRecord.checkin_date >= start_date,
+            CheckinRecord.checkin_date <= end_date,
+            CheckinRecord.status.in_(["signed", "normal"])
+        ).scalar() or 0
+        
+        late = db.query(func.count(CheckinRecord.id)).filter(
+            CheckinRecord.user_id == current_user.id,
+            CheckinRecord.time_slot_id == slot["id"],
+            CheckinRecord.checkin_date >= start_date,
+            CheckinRecord.checkin_date <= end_date,
+            CheckinRecord.status == "late"
+        ).scalar() or 0
+        
+        total = work_days  # 每个时段每个工作日应签一次
+        rate = round(signed / total * 100, 1) if total > 0 else 0
         
         result.append({
-            "label": slot.label,
-            "count": count
+            "time_slot": {
+                "id": slot["id"],
+                "label": slot["label"],
+                "start_time": slot["start"],
+                "end_time": slot["normal_end"]
+            },
+            "signed_count": signed,
+            "late_count": late,
+            "total_count": total,
+            "rate": rate
         })
     
-    return result
+    return {"items": result}
 
 
 @router.get("/records")
-def get_records(limit: int = 10, db: Session = Depends(get_db), user_id: int = 1):
-    """获取最近签到记录"""
-    records = db.query(CheckinRecord, TimeSlot).join(
-        TimeSlot, CheckinRecord.time_slot_id == TimeSlot.id
-    ).filter(
-        CheckinRecord.user_id == user_id
-    ).order_by(CheckinRecord.checkin_time.desc()).limit(limit).all()
+def get_records(
+    page: int = Query(1, ge=1, description="页码"),
+    page_size: int = Query(10, ge=1, le=50, description="每页条数"),
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    """获取最近签到记录，按日期分组"""
+    is_headmaster = current_user.is_headmaster or current_user.role == "head_teacher"
+    slot_count = len(get_user_time_slots(is_headmaster))
     
-    result = []
-    for record, slot in records:
-        result.append({
-            "id": record.id,
-            "time_slot_label": slot.label,
-            "checkin_time": record.checkin_time.isoformat(),
-            "status": record.status,
-            "location": record.location
+    # 查询有签到记录的日期
+    dates_query = db.query(
+        func.distinct(CheckinRecord.checkin_date)
+    ).filter(
+        CheckinRecord.user_id == current_user.id
+    ).order_by(
+        CheckinRecord.checkin_date.desc()
+    ).offset((page - 1) * page_size).limit(page_size).all()
+    
+    total = db.query(
+        func.count(func.distinct(CheckinRecord.checkin_date))
+    ).filter(
+        CheckinRecord.user_id == current_user.id
+    ).scalar() or 0
+    
+    weekday_names = ['星期一', '星期二', '星期三', '星期四', '星期五', '星期六', '星期日']
+    month_names = ['1月', '2月', '3月', '4月', '5月', '6月', '7月', '8月', '9月', '10月', '11月', '12月']
+    
+    records = []
+    for (d,) in dates_query:
+        day_records = db.query(CheckinRecord).filter(
+            CheckinRecord.user_id == current_user.id,
+            CheckinRecord.checkin_date == d
+        ).all()
+        
+        # 该日整体状态
+        has_late = any(r.status == "late" for r in day_records)
+        has_absent = any(r.status == "absent" for r in day_records)
+        slot_signed = {r.time_slot_id for r in day_records if r.status in ("signed", "normal", "late")}
+        
+        if has_absent or len(slot_signed) == 0:
+            day_status = "absent"
+        elif has_late:
+            day_status = "late"
+        else:
+            day_status = "normal"
+        
+        # 最早签到时间
+        first_time = None
+        signed_records = [r for r in day_records if r.status in ("signed", "normal", "late")]
+        if signed_records:
+            earliest = min(signed_records, key=lambda r: r.checkin_time)
+            first_time = earliest.checkin_time.strftime("%H:%M")
+        
+        records.append({
+            "date": f"{d.year}年{d.month}月{d.day}日 {weekday_names[d.weekday()]}",
+            "day": d.day,
+            "month": month_names[d.month - 1],
+            "weekday": weekday_names[d.weekday()],
+            "status": day_status,
+            "first_checkin_time": first_time,
+            "location": day_records[0].location if day_records else "清涧中学"
         })
     
-    return result
+    return {"records": records, "total": total}

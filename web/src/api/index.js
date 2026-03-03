@@ -95,6 +95,9 @@ export const logApi = {
 /* ========== Users (签到用户管理) ========== */
 export const userApi = {
     list: (params) => api.get('/users/admin/list', { params }),
+    create: (data) => api.post('/users/admin/create', data),
+    update: (userId, data) => api.put(`/users/admin/${userId}`, data),
+    delete: (userId) => api.delete(`/users/admin/${userId}`),
     updatePermissions: (userId, data) => api.put(`/users/admin/${userId}/permissions`, data),
     getStats: () => api.get('/users/admin/stats'),
 }
