@@ -129,47 +129,65 @@ function uploadAvatar(filePath) {
 
 /** 获取今日签到安排 */
 function getTodayCheckin() {
-    return request(API.CHECKIN_TODAY);
+    const userInfo = getApp().globalData.userInfo || wx.getStorageSync('userInfo');
+    const userId = userInfo ? userInfo.id : 1;
+    return request(`${API.CHECKIN_TODAY}?user_id=${userId}`);
 }
 
 /** 打卡签到 */
 function doCheckin(timeSlotId, location = '清涧中学') {
-    return request(API.CHECKIN, 'POST', { time_slot_id: timeSlotId, location });
+    const userInfo = getApp().globalData.userInfo || wx.getStorageSync('userInfo');
+    const userId = userInfo ? userInfo.id : 1;
+    return request(`${API.CHECKIN}?user_id=${userId}`, 'POST', { time_slot_id: timeSlotId, location });
 }
 
 /** 统计概览 */
 function getStatsOverview(period = 'week') {
-    return request(`${API.STATS_OVERVIEW}?period=${period}`);
+    const userInfo = getApp().globalData.userInfo || wx.getStorageSync('userInfo');
+    const userId = userInfo ? userInfo.id : 1;
+    return request(`${API.STATS_OVERVIEW}?period=${period}&user_id=${userId}`);
 }
 
 /** 签到趋势 */
 function getStatsTrend(period = 'week') {
-    return request(`${API.STATS_TREND}?period=${period}`);
+    const userInfo = getApp().globalData.userInfo || wx.getStorageSync('userInfo');
+    const userId = userInfo ? userInfo.id : 1;
+    return request(`${API.STATS_TREND}?period=${period}&user_id=${userId}`);
 }
 
 /** 时段分析 */
 function getStatsTimeslot(period = 'week') {
-    return request(`${API.STATS_TIMESLOT}?period=${period}`);
+    const userInfo = getApp().globalData.userInfo || wx.getStorageSync('userInfo');
+    const userId = userInfo ? userInfo.id : 1;
+    return request(`${API.STATS_TIMESLOT}?period=${period}&user_id=${userId}`);
 }
 
 /** 最近签到记录 */
 function getStatsRecords(limit = 10) {
-    return request(`${API.STATS_RECORDS}?limit=${limit}`);
+    const userInfo = getApp().globalData.userInfo || wx.getStorageSync('userInfo');
+    const userId = userInfo ? userInfo.id : 1;
+    return request(`${API.STATS_RECORDS}?limit=${limit}&user_id=${userId}`);
 }
 
 /** 成就勋章 */
 function getAchievements() {
-    return request(API.ACHIEVEMENTS);
+    const userInfo = getApp().globalData.userInfo || wx.getStorageSync('userInfo');
+    const userId = userInfo ? userInfo.id : 1;
+    return request(`${API.ACHIEVEMENTS}?user_id=${userId}`);
 }
 
 /** 最近活动 */
 function getActivities() {
-    return request(API.USER_ME_ACTIVITIES);
+    const userInfo = getApp().globalData.userInfo || wx.getStorageSync('userInfo');
+    const userId = userInfo ? userInfo.id : 1;
+    return request(`${API.USER_ME_ACTIVITIES}?user_id=${userId}`);
 }
 
 /** 用户统计概要 */
 function getUserStats() {
-    return request(API.USER_ME_STATS);
+    const userInfo = getApp().globalData.userInfo || wx.getStorageSync('userInfo');
+    const userId = userInfo ? userInfo.id : 1;
+    return request(`${API.USER_ME_STATS}?user_id=${userId}`);
 }
 
 /** 提交请假申请 */
