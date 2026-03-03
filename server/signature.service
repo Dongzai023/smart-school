@@ -1,0 +1,16 @@
+[Unit]
+Description=清涧中学考勤与设备管理系统
+After=network.target mysql.service
+
+[Service]
+Type=simple
+User=ubuntu
+Group=ubuntu
+WorkingDirectory=/opt/signature/backend
+Environment="PATH=/opt/signature/backend/venv/bin"
+ExecStart=/opt/signature/backend/venv/bin/uvicorn app.main:app --host 127.0.0.1 --port 8001
+Restart=always
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target

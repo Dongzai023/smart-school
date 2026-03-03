@@ -1,0 +1,125 @@
+/* pages/scan-unlock/scan-unlock.wxss */
+
+.container {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 100vh;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  padding: 40rpx;
+}
+
+.status-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  background: rgba(255, 255, 255, 0.95);
+  border-radius: 32rpx;
+  padding: 80rpx 60rpx;
+  width: 100%;
+  max-width: 600rpx;
+  box-shadow: 0 20rpx 60rpx rgba(0, 0, 0, 0.15);
+  animation: fadeInUp 0.5s ease-out;
+}
+
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(40rpx);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.icon-wrapper {
+  width: 160rpx;
+  height: 160rpx;
+  border-radius: 50%;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  margin-bottom: 40rpx;
+}
+
+.icon {
+  font-size: 80rpx;
+}
+
+.loading-ring {
+  background: linear-gradient(135deg, #e0e7ff, #c7d2fe);
+  animation: pulse 1.5s infinite;
+}
+
+@keyframes pulse {
+  0%, 100% {
+    transform: scale(1);
+    opacity: 1;
+  }
+  50% {
+    transform: scale(1.05);
+    opacity: 0.8;
+  }
+}
+
+.success-bg {
+  background: linear-gradient(135deg, #d1fae5, #a7f3d0);
+}
+
+.warning-bg {
+  background: linear-gradient(135deg, #fff3cd, #fde68a);
+}
+
+.error-bg {
+  background: linear-gradient(135deg, #fee2e2, #fca5a5);
+}
+
+.title {
+  font-size: 44rpx;
+  font-weight: 700;
+  color: #1f2937;
+  margin-bottom: 16rpx;
+}
+
+.message {
+  font-size: 28rpx;
+  color: #6b7280;
+  text-align: center;
+  margin-bottom: 20rpx;
+  line-height: 1.6;
+}
+
+.device-name {
+  font-size: 26rpx;
+  color: #9ca3af;
+  margin-bottom: 40rpx;
+}
+
+.btn {
+  width: 100%;
+  height: 88rpx;
+  line-height: 88rpx;
+  border-radius: 44rpx;
+  font-size: 30rpx;
+  font-weight: 600;
+  margin-top: 32rpx;
+  border: none;
+}
+
+.btn-primary {
+  background: linear-gradient(135deg, #667eea, #764ba2);
+  color: #fff;
+}
+
+.btn-secondary {
+  background: #f3f4f6;
+  color: #374151;
+}
+
+.btn-group {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 16rpx;
+}

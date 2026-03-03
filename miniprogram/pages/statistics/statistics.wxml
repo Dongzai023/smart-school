@@ -1,0 +1,278 @@
+<!-- 头部 -->
+<view class="header">
+  <view class="header-title-wrap">
+    <view class="header-icon">
+      <image src="/assets/CodeBubbyAssets/3_4/29.svg" mode="aspectFit" class="header-svg"></image>
+    </view>
+    <view class="header-text">
+      <text class="header-subtitle">DATA ANALYTICS</text>
+      <text class="header-title">考勤统计</text>
+    </view>
+  </view>
+  <view class="realtime-badge">
+    <image src="/assets/CodeBubbyAssets/3_4/56.svg" mode="aspectFit" class="realtime-icon"></image>
+    <text class="realtime-text">实时</text>
+  </view>
+</view>
+
+<!-- 主内容区 -->
+<scroll-view class="main-container" scroll-y>
+  <!-- 时间切换 -->
+  <view class="time-tabs">
+    <view class="time-tab-item {{selectedTab === 'week' ? 'time-tab-active' : ''}}" bindtap="onTabSwitch" data-tab="week">
+      <text class="{{selectedTab === 'week' ? 'time-tab-text-active' : 'time-tab-text'}}">本周</text>
+    </view>
+    <view class="time-tab-item {{selectedTab === 'month' ? 'time-tab-active' : ''}}" bindtap="onTabSwitch" data-tab="month">
+      <text class="{{selectedTab === 'month' ? 'time-tab-text-active' : 'time-tab-text'}}">本月</text>
+    </view>
+    <view class="time-tab-item {{selectedTab === 'semester' ? 'time-tab-active' : ''}}" bindtap="onTabSwitch" data-tab="semester">
+      <text class="{{selectedTab === 'semester' ? 'time-tab-text-active' : 'time-tab-text'}}">本学期</text>
+    </view>
+  </view>
+
+  <!-- 统计概览卡片 -->
+  <view class="stats-overview-card">
+    <view class="bg-decoration bg-1"></view>
+    <view class="bg-decoration bg-2"></view>
+    
+    <!-- 出勤率圆环 -->
+    <view class="attendance-rate">
+      <view class="ring-container">
+        <view class="ring-outer" style="background: conic-gradient(#00BC7D {{attendanceRate}}%, #F1F5F9 0);"></view>
+        <view class="ring-inner">
+          <view class="rate-value">
+            <text class="rate-number">{{attendanceRate}}</text>
+            <text class="rate-percent">%</text>
+          </view>
+          <text class="rate-label">出勤率</text>
+          <view class="rate-stars">
+            <image src="/assets/CodeBubbyAssets/3_4/5.svg" mode="aspectFit" class="star-icon"></image>
+            <image src="/assets/CodeBubbyAssets/3_4/6.svg" mode="aspectFit" class="star-icon"></image>
+            <image src="/assets/CodeBubbyAssets/3_4/7.svg" mode="aspectFit" class="star-icon"></image>
+          </view>
+        </view>
+      </view>
+    </view>
+
+    <!-- 统计数据 -->
+    <view class="stats-grid">
+      <view class="stat-item stat-signed">
+        <view class="stat-badge">
+          <image src="/assets/CodeBubbyAssets/3_4/8.svg" mode="aspectFit" class="stat-badge-icon"></image>
+        </view>
+        <text class="stat-number">{{signedCount}}</text>
+        <text class="stat-label">已签到</text>
+      </view>
+      <view class="stat-item stat-late">
+        <view class="stat-badge badge-orange">
+          <image src="/assets/CodeBubbyAssets/3_4/9.svg" mode="aspectFit" class="stat-badge-icon"></image>
+        </view>
+        <text class="stat-number">{{lateCount}}</text>
+        <text class="stat-label">迟到</text>
+      </view>
+      <view class="stat-item stat-absent">
+        <view class="stat-badge badge-red">
+          <image src="/assets/CodeBubbyAssets/3_4/10.svg" mode="aspectFit" class="stat-badge-icon"></image>
+        </view>
+        <text class="stat-number">{{absentCount}}</text>
+        <text class="stat-label">缺勤</text>
+      </view>
+    </view>
+
+    <!-- 全校排名 -->
+    <view class="rank-banner">
+      <view class="rank-banner-bg"></view>
+      <view class="rank-content">
+        <view class="rank-icon-wrap">
+          <image src="/assets/CodeBubbyAssets/3_4/11.svg" mode="aspectFit" class="rank-banner-icon"></image>
+        </view>
+        <view class="rank-info">
+          <text class="rank-banner-label">全校排名</text>
+          <text class="rank-banner-value">#{{schoolRank}}</text>
+        </view>
+      </view>
+      <view class="rank-status">
+        <image src="/assets/CodeBubbyAssets/3_4/12.svg" mode="aspectFit" class="rank-trophy"></image>
+        <text class="rank-status-text">{{rankLabel}}</text>
+      </view>
+    </view>
+  </view>
+
+  <!-- 签到趋势 -->
+  <view class="section">
+    <view class="section-header">
+      <view class="section-title-wrap">
+        <image src="/assets/CodeBubbyAssets/3_4/13.svg" mode="aspectFit" class="section-icon"></image>
+        <view class="section-text">
+          <text class="section-title">签到趋势</text>
+          <text class="section-subtitle">ATTENDANCE TREND</text>
+        </view>
+      </view>
+      <view class="section-tag">
+        <image src="/assets/CodeBubbyAssets/3_4/14.svg" mode="aspectFit" class="tag-icon"></image>
+        <text class="tag-text">7天</text>
+      </view>
+    </view>
+    
+    <view class="trend-card">
+      <view class="trend-chart">
+        <view wx:for="{{trendDays}}" wx:key="date" class="trend-bar-wrap">
+          <view class="trend-bar bar-{{item.status === 'full' ? 'green' : (item.status === 'partial' ? 'orange' : 'gray')}}"></view>
+          <text class="trend-day">{{item.day_label}}</text>
+        </view>
+      </view>
+      <view class="trend-legend">
+        <view class="legend-item">
+          <image src="/assets/CodeBubbyAssets/3_4/27.svg" mode="aspectFit" class="legend-dot dot-green"></image>
+          <text class="legend-text">全勤</text>
+        </view>
+        <view class="legend-item">
+          <image src="/assets/CodeBubbyAssets/3_4/28.svg" mode="aspectFit" class="legend-dot dot-orange"></image>
+          <text class="legend-text">部分</text>
+        </view>
+        <view class="legend-item">
+          <image src="/assets/CodeBubbyAssets/3_4/29.svg" mode="aspectFit" class="legend-dot dot-red"></image>
+          <text class="legend-text">缺勤</text>
+        </view>
+      </view>
+    </view>
+  </view>
+
+  <!-- 时段分析 -->
+  <view class="section">
+    <view class="section-header">
+      <view class="section-title-wrap">
+        <image src="/assets/CodeBubbyAssets/3_4/30.svg" mode="aspectFit" class="section-icon"></image>
+        <view class="section-text">
+          <text class="section-title">时段分析</text>
+          <text class="section-subtitle">TIME SLOT STATS</text>
+        </view>
+      </view>
+    </view>
+    
+    <view class="time-slot-list">
+      <view wx:for="{{timeslotStats}}" wx:key="label" class="time-slot-item">
+        <view class="slot-header">
+          <view class="slot-time-wrap">
+            <image src="/assets/CodeBubbyAssets/3_4/31.svg" mode="aspectFit" class="slot-icon"></image>
+            <text class="slot-time">{{item.label}}</text>
+          </view>
+          <view class="slot-stats">
+            <text class="slot-fraction">{{item.signed_count}}/{{item.total_count}}</text>
+            <text class="slot-rate rate-{{item.rate >= 90 ? 'green' : (item.rate >= 80 ? 'orange' : 'red')}}">{{item.rate}}%</text>
+          </view>
+        </view>
+        <view class="progress-bar">
+          <view class="progress-fill fill-{{item.rate >= 90 ? 'green' : (item.rate >= 80 ? 'orange' : 'red')}}" style="width: {{item.rate}}%;"></view>
+        </view>
+      </view>
+    </view>
+  </view>
+
+  <!-- 最近记录 -->
+  <view class="section">
+    <view class="section-header">
+      <view class="section-title-wrap">
+        <image src="/assets/CodeBubbyAssets/3_4/35.svg" mode="aspectFit" class="section-icon"></image>
+        <view class="section-text">
+          <text class="section-title">最近记录</text>
+          <text class="section-subtitle">RECENT RECORDS</text>
+        </view>
+      </view>
+      <text class="view-all">查看全部 ></text>
+    </view>
+    
+    <view class="record-list">
+      <view wx:for="{{recentRecords}}" wx:key="date" class="record-item">
+        <view class="record-date date-{{item.status === 'normal' ? 'green' : (item.status === 'late' ? 'orange' : 'red')}}">
+          <text class="record-day">{{item.day}}</text>
+          <text class="record-month">{{item.month}}</text>
+        </view>
+        <view class="record-info">
+          <view class="record-header">
+            <text class="record-date-text">{{item.date}}</text>
+            <view class="record-status status-{{item.status}}">{{item.status === 'normal' ? '正常' : (item.status === 'late' ? '迟到' : '缺勤')}}</view>
+          </view>
+          <view class="record-detail">
+            <view class="record-time-wrap" wx:if="{{item.first_checkin_time}}">
+              <image src="/assets/CodeBubbyAssets/3_4/36.svg" mode="aspectFit" class="record-icon"></image>
+              <text class="record-time">{{item.first_checkin_time}}</text>
+            </view>
+            <view class="record-location-wrap">
+              <image src="/assets/CodeBubbyAssets/3_4/37.svg" mode="aspectFit" class="record-icon"></image>
+              <text class="record-location">{{item.location}}</text>
+            </view>
+          </view>
+          <view class="record-checks">
+            <view wx:for="{{item.checks}}" wx:for-item="check" wx:key="time_slot_id" class="check-item {{check.status === 'done' ? 'check-done' : 'check-undone'}}">
+              {{check.status === 'done' ? '✓' : '—'}}
+            </view>
+          </view>
+        </view>
+      </view>
+    </view>
+  </view>
+
+  <!-- 成就勋章 -->
+  <view class="section">
+    <view class="section-header">
+      <view class="section-title-wrap">
+        <image src="/assets/CodeBubbyAssets/3_4/44.svg" mode="aspectFit" class="section-icon"></image>
+        <view class="section-text">
+          <text class="section-title">成就勋章</text>
+          <text class="section-subtitle">ACHIEVEMENTS</text>
+        </view>
+      </view>
+      <view class="achievement-progress">
+        <image src="/assets/CodeBubbyAssets/3_4/45.svg" mode="aspectFit" class="progress-icon"></image>
+        <text class="progress-text">{{unlocked_count}}/{{total_count}}</text>
+      </view>
+    </view>
+    
+    <view class="achievement-grid">
+      <view wx:for="{{items}}" wx:key="id" class="achievement-item {{item.unlocked ? 'unlocked' : 'locked'}}">
+        <view class="achievement-icon {{item.unlocked ? '' : 'icon-locked'}}">
+          <text class="achievement-emoji">{{item.emoji}}</text>
+          <image wx:if="{{item.unlocked}}" src="/assets/CodeBubbyAssets/3_4/46.svg" mode="aspectFit" class="achievement-glow"></image>
+        </view>
+        <text class="achievement-name">{{item.name}}</text>
+        <text class="achievement-desc">{{item.description}}</text>
+        <view wx:if="{{item.unlocked}}" class="achievement-check">
+          <image src="/assets/CodeBubbyAssets/3_4/47.svg" mode="aspectFit" class="check-icon"></image>
+        </view>
+      </view>
+    </view>
+  </view>
+
+  <!-- 底部信息 -->
+  <view class="footer">
+    <image class="footer-icon" src="/assets/CodeBubbyAssets/3_4/54.svg" mode="aspectFit"></image>
+    <text class="footer-title">清涧中学考勤系统</text>
+    <text class="footer-subtitle">DIGITAL ATTENDANCE PLATFORM</text>
+  </view>
+  
+  <view class="bottom-safe-area"></view>
+</scroll-view>
+
+<!-- 底部导航 -->
+<view class="tab-bar">
+  <view class="tab-item" bindtap="switchTab" data-page="index">
+    <view class="tab-icon">
+      <image class="tab-icon-img" src="/assets/CodeBubbyAssets/5_4/1.svg" mode="aspectFit"></image>
+    </view>
+    <text class="tab-text">签到打卡</text>
+  </view>
+  <view class="tab-item tab-active" bindtap="switchTab" data-page="statistics">
+    <image class="tab-active-bg" src="/assets/CodeBubbyAssets/5_4/4.svg" mode="aspectFit"></image>
+    <view class="tab-icon">
+      <image class="tab-icon-img" src="/assets/CodeBubbyAssets/5_4/2.svg" mode="aspectFit"></image>
+    </view>
+    <text class="tab-text tab-text-active">统计报表</text>
+  </view>
+  <view class="tab-item" bindtap="switchTab" data-page="profile">
+    <view class="tab-icon">
+      <image class="tab-icon-img" src="/assets/CodeBubbyAssets/5_4/3.svg" mode="aspectFit"></image>
+    </view>
+    <text class="tab-text">个人中心</text>
+  </view>
+</view>
