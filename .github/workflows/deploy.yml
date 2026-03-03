@@ -8,7 +8,7 @@ on:
 env:
   SERVER_HOST: ${{ secrets.SERVER_HOST }}
   SERVER_USER: ${{ secrets.SERVER_USER }}
-  DEPLOY_PATH: /opt/lock-screen
+  DEPLOY_PATH: /opt/smart-school
 
 jobs:
   build-frontend:
@@ -89,6 +89,13 @@ jobs:
             --exclude='cache/' \
             --exclude='*.log' \
             agent/ ${{ secrets.SERVER_USER }}@${{ secrets.SERVER_HOST }}:${{ env.DEPLOY_PATH }}/agent/
+
+      - name: Sync miniprogram files
+        run: |
+          rsync -avz --delete \
+            --exclude='node_modules/' \
+            --exclude='.git/' \
+            miniprogram/ ${{ secrets.SERVER_USER }}@${{ secrets.SERVER_HOST }}:${{ env.DEPLOY_PATH }}/miniprogram/
 
       - name: Deploy on server
         run: |
