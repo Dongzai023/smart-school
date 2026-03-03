@@ -7,7 +7,7 @@ from sqlalchemy.orm import Session
 import os
 import uuid
 
-from app.database import get_db, get_db_session
+from app.database import get_db
 from app.models.user import User
 from app.models.checkin_record import CheckinRecord
 from app.models.leave import Leave
