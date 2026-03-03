@@ -102,8 +102,9 @@ Page({
         });
 
         const hasSigned = items.some(i => i.status === 'signed' || i.status === 'late');
-        const allSigned = items.length > 0 && items.every(i => i.status !== 'unsigned' && i.status !== 'pending');
-        const checkInStatus = allSigned ? '已签' : (hasSigned ? '部分已签' : '待签');
+        const hasAbsent = items.some(i => i.status === 'absent');
+        const allSigned = items.length > 0 && items.every(i => i.status !== 'unsigned' && i.status !== 'pending' && i.status !== 'absent');
+        const checkInStatus = allSigned ? '已签' : (hasAbsent ? '有缺勤' : (hasSigned ? '部分已签' : '待签'));
 
 
         this.setData({ todaySchedule: items, checkInStatus });

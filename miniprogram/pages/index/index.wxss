@@ -342,6 +342,11 @@
   border: 1rpx solid #F1F5F9;
 }
 
+.item-absent {
+  background: rgba(244, 63, 94, 0.1);
+  border: 1rpx solid #FFE4E6;
+}
+
 .schedule-time {
   font-size: 16rpx;
   font-weight: 700;
@@ -369,6 +374,10 @@
 
 .status-pending {
   color: #CAD5E2;
+}
+
+.status-absent {
+  color: #FF2056;
 }
 
 /* 考勤数据统计 */
