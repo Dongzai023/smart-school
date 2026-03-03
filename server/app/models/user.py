@@ -33,4 +33,4 @@ class User(Base):
     can_scan_unlock: Mapped[bool] = mapped_column(Boolean, default=False, comment="是否可扫码解锁屏幕")
     is_active: Mapped[bool] = mapped_column(Boolean, default=True, comment="是否启用")
     created_at: Mapped[datetime] = mapped_column(DateTime, server_default="CURRENT_TIMESTAMP")
-    updated_at: Mapped[datetime] = mapped_column(DateTime, server_default="CURRENT_TIMESTAMP", onupdate="CURRENT_TIMESTAMP")
+    updated_at: Mapped[datetime] = mapped_column(DateTime, default=None)

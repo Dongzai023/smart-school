@@ -35,7 +35,7 @@ class PasswordChange(BaseModel):
     new_password: str
 
 
-class UserUpdate(BaseModel):
+class UserProfileUpdate(BaseModel):
     nickname: str | None = None
     phone: str | None = None
     email: str | None = None
@@ -79,7 +79,7 @@ def get_current_user_info(current_user: User = Depends(get_current_user)):
 
 @router.put("/me")
 def update_current_user(
-    data: UserUpdate,
+    data: UserProfileUpdate,
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user)
 ):
