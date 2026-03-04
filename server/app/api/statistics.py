@@ -338,7 +338,8 @@ def admin_get_user_stats(
     department: str = Query(None, description="部门筛选"),
     period: str = Query("week", description="统计周期"),
     db: Session = Depends(get_db),
-    admin: User = Depends(require_admin)
+    admin: User = Depends(require_admin),
+    role: str = Query(None, description="角色筛选")
 ):
     """管理员获取所有用户的签到统计"""
     start_date, end_date = _get_date_range(period)
@@ -347,6 +348,8 @@ def admin_get_user_stats(
     query = db.query(User).filter(User.is_active == True)
     if department:
         query = query.filter(User.department == department)
+    if role:
+        query = query.filter(User.role == role)
     
     total = query.count()
     users = query.offset((page - 1) * page_size).limit(page_size).all()
@@ -385,6 +388,8 @@ def admin_get_user_stats(
             "real_name": user.real_name,
             "department": user.department or "",
             "role": user.role,
+            "is_headmaster": user.is_headmaster or user.role == "head_teacher",
+            "is_verified": user.is_verified or False,
             "signed_count": signed,
             "late_count": late,
             "absent_count": absent,

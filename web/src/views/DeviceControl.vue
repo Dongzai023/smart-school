@@ -190,7 +190,7 @@ const currentUser = computed(() => {
   const raw = localStorage.getItem('user')
   return raw ? JSON.parse(raw) : null
 })
-const isAdmin = computed(() => currentUser.value?.role === 'admin')
+const isAdmin = computed(() => currentUser.value?.role === 'admin' || currentUser.value?.employee_id === 'admin')
 
 const filteredDevices = computed(() => {
   let list = devices.value

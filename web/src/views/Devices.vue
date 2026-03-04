@@ -124,7 +124,7 @@ const currentUser = computed(() => {
   const raw = localStorage.getItem('user')
   return raw ? JSON.parse(raw) : null
 })
-const isAdmin = computed(() => currentUser.value?.role === 'admin')
+const isAdmin = computed(() => currentUser.value?.role === 'admin' || currentUser.value?.employee_id === 'admin')
 
 const groupForm = reactive({ name: '', building: '', floor: '' })
 const deviceForm = reactive({ id: null, name: '', room_name: '', ip: '', mac: '', group_id: null })
