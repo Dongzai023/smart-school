@@ -10,7 +10,13 @@ Page({
     unlocked_count: 0,
     total_count: 0,
     darkMode: false,
-    baseUrl: api.BASE_URL
+    baseUrl: api.BASE_URL,
+    // 编辑弹窗
+    showEditModal: false,
+    editForm: {},
+    genderOptions: ['男', '女'],
+    editGenderIndex: -1,
+    isSaving: false
   },
 
   onLoad() {
@@ -115,16 +121,60 @@ Page({
     });
   },
 
-  // 编辑资料
-  editProfile() {
-    this.goToEditProfile();
+  // 显示编辑弹窗
+  showEditProfile() {
+    const userInfo = this.data.userInfo || {};
+    let editGenderIndex = -1;
+    if (userInfo.gender === '男') editGenderIndex = 0;
+    else if (userInfo.gender === '女') editGenderIndex = 1;
+
+    this.setData({
+      showEditModal: true,
+      editForm: { ...userInfo },
+      editGenderIndex
+    });
   },
 
-  // 跳转到编辑资料页面
-  goToEditProfile() {
-    wx.navigateTo({
-      url: '/pages/edit-profile/edit-profile'
+  // 隐藏编辑弹窗
+  hideEditProfile() {
+    this.setData({ showEditModal: false });
+  },
+
+  // 编辑性别选择
+  onEditGenderChange(e) {
+    this.setData({
+      editGenderIndex: e.detail.value
     });
+  },
+
+  // 提交编辑表单
+  submitEditForm(e) {
+    const formData = e.detail.value;
+    const { editGenderIndex, genderOptions } = this.data;
+
+    if (editGenderIndex >= 0) {
+      formData.gender = genderOptions[editGenderIndex];
+    }
+
+    this.setData({ isSaving: true });
+    wx.showLoading({ title: '保存中...' });
+
+    api.updateMe(formData)
+      .then(updatedInfo => {
+        const app = getApp();
+        app.globalData.userInfo = updatedInfo;
+        wx.setStorageSync('userInfo', updatedInfo);
+        this.setData({ userInfo: updatedInfo, showEditModal: false });
+        wx.showToast({ title: '保存成功', icon: 'success' });
+      })
+      .catch(err => {
+        console.error('保存失败', err);
+        wx.showToast({ title: err.message || '保存失败', icon: 'none' });
+      })
+      .finally(() => {
+        this.setData({ isSaving: false });
+        wx.hideLoading();
+      });
   },
 
   goToMessages() { wx.showToast({ title: '消息通知', icon: 'none' }); },

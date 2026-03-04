@@ -614,3 +614,134 @@ page {
   height: 120rpx;
   z-index: -1;
 }
+
+/* 编辑弹窗样式 */
+.edit-modal {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 1000;
+}
+
+.edit-modal-mask {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.5);
+}
+
+.edit-modal-content {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  background: #FFFFFF;
+  border-radius: 32rpx 32rpx 0 0;
+  max-height: 85vh;
+  display: flex;
+  flex-direction: column;
+}
+
+.edit-modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 32rpx;
+  border-bottom: 1rpx solid #E5E7EB;
+}
+
+.edit-modal-title {
+  font-size: 34rpx;
+  font-weight: 600;
+  color: #1F2937;
+}
+
+.edit-modal-close {
+  width: 48rpx;
+  height: 48rpx;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.close-icon {
+  width: 32rpx;
+  height: 32rpx;
+}
+
+.edit-modal-body {
+  padding: 32rpx;
+  flex: 1;
+  box-sizing: border-box;
+}
+
+.form-group {
+  margin-bottom: 24rpx;
+}
+
+.form-label {
+  font-size: 28rpx;
+  color: #4B5563;
+  margin-bottom: 12rpx;
+}
+
+.form-input {
+  width: 100%;
+  height: 80rpx;
+  background: #F3F4F6;
+  border-radius: 16rpx;
+  padding: 0 24rpx;
+  font-size: 28rpx;
+  box-sizing: border-box;
+}
+
+.picker-view {
+  width: 100%;
+  height: 80rpx;
+  background: #F3F4F6;
+  border-radius: 16rpx;
+  padding: 0 24rpx;
+  font-size: 28rpx;
+  display: flex;
+  align-items: center;
+  box-sizing: border-box;
+}
+
+.placeholder-text {
+  color: #9CA3AF;
+}
+
+.btn-group {
+  display: flex;
+  gap: 24rpx;
+  margin-top: 32rpx;
+  margin-bottom: 48rpx;
+}
+
+.cancel-btn,
+.save-btn {
+  flex: 1;
+  height: 88rpx;
+  border-radius: 44rpx;
+  font-size: 30rpx;
+  font-weight: 500;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.cancel-btn {
+  background: #F3F4F6;
+  color: #4B5563;
+  border: none;
+}
+
+.save-btn {
+  background: linear-gradient(135deg, #00BC7D 0%, #00BBA7 100%);
+  color: #FFFFFF;
+  border: none;
+}

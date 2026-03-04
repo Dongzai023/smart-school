@@ -25,7 +25,7 @@
         <view class="user-id-badge">
           <text class="user-id-text">工号: {{userInfo.employee_id || '--'}}</text>
         </view>
-        <view class="copy-btn" bindtap="goToEditProfile">
+        <view class="copy-btn" bindtap="showEditProfile">
           <image class="copy-icon" src="/assets/CodeBubbyAssets/5_4/17.svg" mode="aspectFit"></image>
         </view>
       </view>
@@ -117,7 +117,7 @@
         <text class="section-title">账户信息</text>
       </view>
       <view class="menu-card">
-        <view class="menu-item" bindtap="goToEditProfile">
+        <view class="menu-item" bindtap="showEditProfile">
           <view class="menu-left">
             <view class="menu-icon-wrap">
               <image class="menu-icon" src="/assets/CodeBubbyAssets/5_4/17.svg" mode="aspectFit"></image>
@@ -260,6 +260,67 @@
     </view>
   </view>
 
+</view>
+
+<!-- 编辑个人信息弹窗 -->
+<view class="edit-modal" wx:if="{{showEditModal}}">
+  <view class="edit-modal-mask" bindtap="hideEditProfile"></view>
+  <view class="edit-modal-content">
+    <view class="edit-modal-header">
+      <text class="edit-modal-title">编辑个人资料</text>
+      <view class="edit-modal-close" bindtap="hideEditProfile">
+        <image class="close-icon" src="/assets/CodeBubbyAssets/5_4/18.svg" mode="aspectFit"></image>
+      </view>
+    </view>
+    <scroll-view class="edit-modal-body" scroll-y>
+      <form bindsubmit="submitEditForm">
+        <view class="form-group">
+          <view class="form-label">姓名</view>
+          <input class="form-input" name="name" value="{{editForm.name}}" placeholder="请输入真实姓名" />
+        </view>
+        <view class="form-group">
+          <view class="form-label">昵称</view>
+          <input class="form-input" name="nickname" value="{{editForm.nickname}}" placeholder="请输入昵称" />
+        </view>
+        <view class="form-group">
+          <view class="form-label">性别</view>
+          <picker mode="selector" range="{{genderOptions}}" value="{{editGenderIndex}}" bindchange="onEditGenderChange">
+            <view class="picker-view {{editGenderIndex >= 0 ? '' : 'placeholder-text'}}">
+              {{editGenderIndex >= 0 ? genderOptions[editGenderIndex] : '请选择性别'}}
+            </view>
+          </picker>
+        </view>
+        <view class="form-group">
+          <view class="form-label">手机号码</view>
+          <input class="form-input" type="number" name="phone" value="{{editForm.phone}}" placeholder="请输入联系电话" />
+        </view>
+        <view class="form-group">
+          <view class="form-label">所属部门</view>
+          <input class="form-input" name="department" value="{{editForm.department}}" placeholder="例如：高中部" />
+        </view>
+        <view class="form-group">
+          <view class="form-label">教研组</view>
+          <input class="form-input" name="department_group" value="{{editForm.department_group}}" placeholder="例如：语文组" />
+        </view>
+        <view class="form-group">
+          <view class="form-label">任教学科</view>
+          <input class="form-input" name="teaching_subject" value="{{editForm.teaching_subject}}" placeholder="例如：语文" />
+        </view>
+        <view class="form-group">
+          <view class="form-label">年级</view>
+          <input class="form-input" name="grade" value="{{editForm.grade}}" placeholder="例如：高一" />
+        </view>
+        <view class="form-group">
+          <view class="form-label">班级</view>
+          <input class="form-input" name="class_name" value="{{editForm.class_name}}" placeholder="例如：1班" />
+        </view>
+        <view class="btn-group">
+          <button class="cancel-btn" bindtap="hideEditProfile">取消</button>
+          <button class="save-btn" form-type="submit" loading="{{isSaving}}">保存</button>
+        </view>
+      </form>
+    </scroll-view>
+  </view>
 </view>
 
 <!-- 底部导航 -->
