@@ -48,7 +48,7 @@ def login(req: LoginRequest, db: Session = Depends(get_db)):
     if req.username:
         user = db.query(User).filter(User.username == req.username).first()
     elif req.employee_id:
-        user = db.query(User).filter(User.username == req.employee_id).first()
+        user = db.query(User).filter(User.employee_id == req.employee_id).first()
     else:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="请提供用户名")
     
