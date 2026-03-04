@@ -7,7 +7,7 @@
         <view class="avatar-wrap">
           <view class="avatar-outer">
             <view class="avatar-inner {{userInfo.avatar_url ? 'has-avatar' : ''}}">
-              <image class="avatar-img {{userInfo.avatar_url ? 'avatar-full' : ''}}" src="{{userInfo.avatar_url ? baseUrl + userInfo.avatar_url : '/assets/CodeBubbyAssets/5_248/2.svg'}}" mode="{{userInfo.avatar_url ? 'aspectFill' : 'aspectFit'}}"></image>
+              <image class="avatar-img {{userInfo.avatar_url ? 'avatar-full' : ''}}" src="{{userInfo.avatar_url || '/assets/CodeBubbyAssets/5_248/2.svg'}}" mode="{{userInfo.avatar_url ? 'aspectFill' : 'aspectFit'}}"></image>
             </view>
           </view>
           <view class="edit-badge" bindtap="onUploadAvatar">
