@@ -8,9 +8,7 @@
           <view class="avatar-outer">
             <view class="avatar-inner {{userInfo.avatar_url ? 'has-avatar' : ''}}">
               <image wx:if="{{userInfo.avatar_url}}" class="avatar-img avatar-full" src="{{baseUrl}}{{userInfo.avatar_url}}" mode="aspectFill"></image>
-              <view wx:else class="avatar-default">
-                <text class="avatar-default-text">{{userInfo.name || userInfo.real_name || '?'}}</text>
-              </view>
+              <image wx:else class="avatar-img" src="/assets/CodeBubbyAssets/2_423/5.svg" mode="aspectFit"></image>
             </view>
           </view>
           <view class="edit-badge" bindtap="onUploadAvatar">
