@@ -7,7 +7,10 @@
         <view class="avatar-wrap">
           <view class="avatar-outer">
             <view class="avatar-inner {{userInfo.avatar_url ? 'has-avatar' : ''}}">
-              <image class="avatar-img {{userInfo.avatar_url ? 'avatar-full' : ''}}" src="{{userInfo.avatar_url || '/assets/CodeBubbyAssets/5_248/2.svg'}}" mode="{{userInfo.avatar_url ? 'aspectFill' : 'aspectFit'}}"></image>
+              <image wx:if="{{userInfo.avatar_url}}" class="avatar-img avatar-full" src="{{baseUrl}}{{userInfo.avatar_url}}" mode="aspectFill"></image>
+              <view wx:else class="avatar-default">
+                <text class="avatar-default-text">{{userInfo.name || userInfo.real_name || '?'}}</text>
+              </view>
             </view>
           </view>
           <view class="edit-badge" bindtap="onUploadAvatar">
