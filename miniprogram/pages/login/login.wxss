@@ -226,6 +226,38 @@
   color: #00BC7D;
 }
 
+/* 错误提示 */
+.error-tip {
+  background: #FFF5F5;
+  border: 1rpx solid #FEB2B2;
+  border-radius: 20rpx;
+  padding: 16rpx 24rpx;
+  display: flex;
+  align-items: center;
+  margin-bottom: 32rpx;
+  animation: shake 0.4s ease-in-out;
+}
+
+.error-icon {
+  width: 24rpx;
+  height: 24rpx;
+  margin-right: 12rpx;
+  flex-shrink: 0;
+}
+
+.error-text {
+  font-size: 22rpx;
+  color: #C53030;
+  font-weight: 600;
+  line-height: 1.4;
+}
+
+@keyframes shake {
+  0%, 100% { transform: translateX(0); }
+  25% { transform: translateX(-8rpx); }
+  75% { transform: translateX(8rpx); }
+}
+
 /* 按钮样式 */
 .btn-container {
   width: 100%;

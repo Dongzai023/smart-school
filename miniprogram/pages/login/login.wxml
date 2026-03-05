@@ -61,6 +61,12 @@
         <text class="forgot-text">忘记密码？</text>
       </view>
 
+      <!-- 错误提示 -->
+      <view class="error-tip" wx:if="{{errorMsg}}">
+        <image class="error-icon" src="/assets/CodeBubbyAssets/2_509/1.svg" mode="aspectFit"></image>
+        <text class="error-text">{{errorMsg}}</text>
+      </view>
+
       <!-- 登录按钮 -->
       <view class="btn-container" bindtap="handleLogin">
         <view class="login-btn">

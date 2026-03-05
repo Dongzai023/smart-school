@@ -3,7 +3,8 @@ const api = require('../../utils/api');
 Page({
   data: {
     employeeId: '',
-    password: ''
+    password: '',
+    errorMsg: ''
   },
 
   onLoad() {
@@ -19,7 +20,8 @@ Page({
   handleInput(e) {
     const { field } = e.currentTarget.dataset;
     this.setData({
-      [field]: e.detail.value
+      [field]: e.detail.value,
+      errorMsg: '' // 输入时重置错误提示
     });
   },
 
@@ -59,6 +61,7 @@ Page({
           })
           .catch(err => {
             wx.hideLoading();
+            this.setData({ errorMsg: err.message || '登录失败，请检查工号和密码' });
             wx.showToast({
               title: err.message || '登录失败，请检查工号和密码',
               icon: 'none',

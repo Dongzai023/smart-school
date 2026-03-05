@@ -79,6 +79,14 @@ async def login(req: LoginRequest, db: Session = Depends(get_db)):
                 openid = data.get("openid")
                 
                 if openid:
+                    # Check if this openid is already bound to another user
+                    other_user = db.query(User).filter(User.wx_openid == openid, User.id != user.id).first()
+                    if other_user:
+                        raise HTTPException(
+                            status_code=status.HTTP_403_FORBIDDEN, 
+                            detail=f"此微信已绑定账号({other_user.real_name})，不可重复绑定"
+                        )
+
                     if not user.wx_openid:
                         # First time login on mini-program, bind openid
                         user.wx_openid = openid
