@@ -30,6 +30,19 @@ def get_db():
         db.close()
 
 
+from sqlalchemy import text
+
 def init_db():
-    """Create all tables."""
+    """Create all tables and perform simple migrations."""
     Base.metadata.create_all(bind=engine)
+    
+    # 手动检查并添加 wx_openid 列 (针对存量数据库的自动迁移)
+    with engine.connect() as conn:
+        try:
+            result = conn.execute(text("SHOW COLUMNS FROM users LIKE 'wx_openid'"))
+            if not result.fetchone():
+                print("Adding missing column 'wx_openid' to 'users' table...")
+                conn.execute(text("ALTER TABLE users ADD COLUMN wx_openid VARCHAR(128) UNIQUE AFTER is_active"))
+                conn.commit()
+        except Exception as e:
+            print(f"Migration error (wx_openid): {e}")
