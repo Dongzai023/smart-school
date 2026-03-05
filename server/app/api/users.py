@@ -1,6 +1,6 @@
 """用户扩展API"""
 
-from datetime import datetime
+from datetime import datetime, timedelta
 from typing import Optional
 from fastapi import APIRouter, Depends, HTTPException, UploadFile, File
 from pydantic import BaseModel
@@ -49,6 +49,9 @@ class UserStats(BaseModel):
     on_time_count: int
     late_count: int
     pending_leaves: int
+    attendance_rate: float
+    rank: int
+    achievement_count: int
 
 
 # ========================
@@ -208,12 +211,55 @@ def get_user_stats(
         Leave.user_id == current_user.id,
         Leave.status == "pending"
     ).count()
+
+    # 计算出勤率
+    from sqlalchemy import func
+    from app.api.statistics import get_user_time_slots, _get_date_range
+    
+    start_date, end_date = _get_date_range("semester")
+    
+    # 该时段内应签到次数
+    work_days = sum(1 for i in range((end_date - start_date).days + 1)
+                   if (start_date + timedelta(days=i)).weekday() < 5)
+    is_headmaster = current_user.is_headmaster or current_user.role == "head_teacher"
+    slot_count = len(get_user_time_slots(is_headmaster))
+    expected = work_days * slot_count
+    
+    # 实际签到（正常+迟到）
+    signed_in_period = db.query(CheckinRecord).filter(
+        CheckinRecord.user_id == current_user.id,
+        CheckinRecord.checkin_date >= start_date,
+        CheckinRecord.checkin_date <= end_date,
+        CheckinRecord.status.in_(["signed", "normal", "late"])
+    ).count()
+    
+    attendance_rate = round(signed_in_period / expected * 100, 1) if expected > 0 else 0
+    
+    # 简单排名 (基于总签到数)
+    rank_query = db.query(
+        CheckinRecord.user_id,
+        func.count(CheckinRecord.id).label("cnt")
+    ).filter(
+        CheckinRecord.status.in_(["signed", "normal", "late"])
+    ).group_by(CheckinRecord.user_id).order_by(func.count(CheckinRecord.id).desc()).all()
+    
+    rank = 1
+    for idx, r in enumerate(rank_query):
+        if r.user_id == current_user.id:
+            rank = idx + 1
+            break
+            
+    # 成就数 (暂时用总签到天数/5作为模拟成就)
+    achievement_count = total_checkins // 5
     
     return {
         "total_checkins": total_checkins,
         "on_time_count": on_time_count,
         "late_count": late_count,
-        "pending_leaves": pending_leaves
+        "pending_leaves": pending_leaves,
+        "attendance_rate": attendance_rate,
+        "rank": rank,
+        "achievement_count": achievement_count
     }
 
 

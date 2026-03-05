@@ -66,11 +66,11 @@ Page({
     return api.getUserStats()
       .then(stats => {
         this.setData({
-          punchesCount: stats.total_days,
-          attendanceRate: stats.attendance_rate,
-          schoolRank: stats.rank,
-          unlocked_count: stats.achievement_count,
-          total_count: stats.total_achievements || 6  // Backend currently doesn't provide total_achievements in user_stats, so fallback to 6
+          punchesCount: stats.total_checkins || 0,
+          attendanceRate: stats.attendance_rate || 0,
+          schoolRank: stats.rank || 0,
+          unlocked_count: stats.achievement_count || 0,
+          total_count: stats.total_achievements || 6
         });
         return stats;
       })
