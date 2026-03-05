@@ -97,6 +97,8 @@ async def login(req: LoginRequest, db: Session = Depends(get_db)):
                             status_code=status.HTTP_403_FORBIDDEN, 
                             detail="当前微信账号与绑定的用户不一致，请联系管理员"
                         )
+            except HTTPException:
+                raise
             except Exception as e:
                 # If WeChat API fails, we might still want to let them login but log the error
                 # Or keep it strict. Here we log it.
