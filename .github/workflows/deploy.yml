@@ -102,8 +102,9 @@ jobs:
           ssh ${{ secrets.SERVER_USER }}@${{ secrets.SERVER_HOST }} << 'EOF'
             cd ${{ env.DEPLOY_PATH }}/server
 
-            # 强制停止并移除旧容器，解决 "Conflict. The container name is already in use" 错误
+            # 更加强制地清理：先用 compose down，再针对性地删除可能残留的容器
             docker compose down || true
+            docker rm -f lock_screen_api || true
             docker compose up -d --build
 
             echo "Deployment completed at $(date)"
