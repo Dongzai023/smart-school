@@ -46,3 +46,11 @@ def init_db():
                 conn.commit()
         except Exception as e:
             print(f"Migration error (wx_openid): {e}")
+
+        # 修复 updated_at 不能为空的问题
+        try:
+            print("Ensuring 'updated_at' is nullable with valid defaults...")
+            conn.execute(text("ALTER TABLE users MODIFY COLUMN updated_at DATETIME NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP"))
+            conn.commit()
+        except Exception as e:
+            print(f"Migration error (updated_at): {e}")
