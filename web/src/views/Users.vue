@@ -120,6 +120,9 @@
         <el-form-item label="姓名" required>
           <el-input v-model="userForm.real_name" placeholder="请输入姓名" />
         </el-form-item>
+        <el-form-item label="昵称">
+          <el-input v-model="userForm.nickname" placeholder="请输入昵称" />
+        </el-form-item>
         <el-form-item label="初始密码" required>
           <el-input v-model="userForm.password" type="password" placeholder="请输入初始密码" show-password />
         </el-form-item>
@@ -148,6 +151,9 @@
         </el-form-item>
         <el-form-item label="姓名">
           <el-input v-model="userForm.real_name" placeholder="请输入姓名" />
+        </el-form-item>
+        <el-form-item label="昵称">
+          <el-input v-model="userForm.nickname" placeholder="请输入昵称" />
         </el-form-item>
         <el-form-item label="部门">
           <el-input v-model="userForm.department" placeholder="请输入部门" />
@@ -191,6 +197,7 @@ const userForm = reactive({
   id: null,
   employee_id: '',
   real_name: '',
+  nickname: '',
   password: '',
   new_password: '',
   department: '',
@@ -296,6 +303,7 @@ function openAddDialog() {
     id: null,
     employee_id: '',
     real_name: '',
+    nickname: '',
     password: '',
     new_password: '',
     department: '',
@@ -310,6 +318,7 @@ function openEditDialog(user) {
     id: user.id,
     employee_id: user.employee_id || user.username,
     real_name: user.real_name,
+    nickname: user.nickname || '',
     password: '',
     new_password: '',
     department: user.department || '',
@@ -345,6 +354,7 @@ async function updateUser() {
   try {
     await userApi.update(userForm.id, {
       real_name: userForm.real_name,
+      nickname: userForm.nickname,
       department: userForm.department,
       role: userForm.role,
       new_password: userForm.new_password || undefined

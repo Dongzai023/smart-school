@@ -321,6 +321,7 @@ def admin_list_users(
 class UserCreate(BaseModel):
     employee_id: str
     real_name: str
+    nickname: Optional[str] = ""
     password: str
     department: Optional[str] = ""
     role: str = "teacher"
@@ -328,6 +329,7 @@ class UserCreate(BaseModel):
 
 class UserUpdate(BaseModel):
     real_name: Optional[str] = None
+    nickname: Optional[str] = None
     department: Optional[str] = None
     role: Optional[str] = None
     new_password: Optional[str] = None
@@ -353,6 +355,7 @@ def admin_create_user(
         username=data.employee_id,
         employee_id=data.employee_id,
         real_name=data.real_name,
+        nickname=data.nickname or "",
         password_hash=hash_password(data.password),
         department=data.department or "",
         role=data.role,
@@ -387,6 +390,8 @@ def admin_update_user(
     
     if data.real_name is not None:
         user.real_name = data.real_name
+    if data.nickname is not None:
+        user.nickname = data.nickname
     if data.department is not None:
         user.department = data.department
     if data.role is not None:
