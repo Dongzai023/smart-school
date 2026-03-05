@@ -102,7 +102,8 @@ jobs:
           ssh ${{ secrets.SERVER_USER }}@${{ secrets.SERVER_HOST }} << 'EOF'
             cd ${{ env.DEPLOY_PATH }}/server
 
-            # Rebuild and restart containers (API+DB+Redis)
+            # 强制停止并移除旧容器，解决 "Conflict. The container name is already in use" 错误
+            docker compose down || true
             docker compose up -d --build
 
             echo "Deployment completed at $(date)"
