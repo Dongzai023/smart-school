@@ -37,28 +37,40 @@ Page({
 
     wx.showLoading({ title: '正在登录...' });
 
-    api.login(employeeId.trim(), password)
-      .then(res => {
-        wx.hideLoading();
-        // 保存 token 和用户信息到全局 + 本地存储
-        const app = getApp();
-        app.globalData.token = res.access_token;
-        app.globalData.userInfo = res.user;
-        wx.setStorageSync('token', res.access_token);
-        wx.setStorageSync('userInfo', res.user);
+    // 1. 获取微信 login code 用于 OpenID 绑定 (安全加固)
+    wx.login({
+      success: (res) => {
+        const code = res.code;
+        // 2. 发起登录请求
+        api.login(employeeId.trim(), password, code)
+          .then(res => {
+            wx.hideLoading();
+            // 保存 token 和用户信息到全局 + 本地存储
+            const app = getApp();
+            app.globalData.token = res.access_token;
+            app.globalData.userInfo = res.user;
+            wx.setStorageSync('token', res.access_token);
+            wx.setStorageSync('userInfo', res.user);
 
-        wx.showToast({ title: '登录成功', icon: 'success' });
-        setTimeout(() => {
-          wx.reLaunch({ url: '/pages/index/index' });
-        }, 800);
-      })
-      .catch(err => {
+            wx.showToast({ title: '登录成功', icon: 'success' });
+            setTimeout(() => {
+              wx.reLaunch({ url: '/pages/index/index' });
+            }, 800);
+          })
+          .catch(err => {
+            wx.hideLoading();
+            wx.showToast({
+              title: err.message || '登录失败，请检查工号和密码',
+              icon: 'none',
+              duration: 2500
+            });
+          });
+      },
+      fail: (err) => {
         wx.hideLoading();
-        wx.showToast({
-          title: err.message || '登录失败，请检查工号和密码',
-          icon: 'none',
-          duration: 2500
-        });
-      });
+        wx.showToast({ title: '微信登录失败，请稍后重试', icon: 'none' });
+        console.error('wx.login fail', err);
+      }
+    });
   }
 });

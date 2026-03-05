@@ -67,6 +67,13 @@ def get_current_user(
         print(f"DEBUG: Auth failed - User {user.username} is inactive")
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="账号已禁用")
     
+    # Optional: Verify OpenID consistency if bound
+    if getattr(user, 'wx_openid', None):
+        oid_in_token = payload.get("oid")
+        if oid_in_token and oid_in_token != user.wx_openid:
+            print(f"DEBUG: Auth failed - OpenID mismatch for user {user.username}")
+            raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="安全校验失败：微信账号不匹配")
+    
     return user
 
 

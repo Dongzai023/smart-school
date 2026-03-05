@@ -39,7 +39,7 @@ class Settings(BaseSettings):
     # JWT
     SECRET_KEY: str = "change_me_in_env"
     ALGORITHM: str = "HS256"
-    ACCESS_TOKEN_EXPIRE_MINUTES: int = 480  # 8 hours
+    ACCESS_TOKEN_EXPIRE_MINUTES: int = 525600  # 1 year (for "permanent" login experience)
 
     # File uploads
     UPLOAD_DIR: str = os.path.join(os.path.dirname(os.path.dirname(__file__)), "uploads")
@@ -47,6 +47,10 @@ class Settings(BaseSettings):
 
     # Agent heartbeat timeout (seconds)
     AGENT_HEARTBEAT_TIMEOUT: int = 90  # Slightly longer for public network
+
+    # WeChat Mini Program
+    WX_APPID: str = ""
+    WX_SECRET: str = ""
 
     class Config:
         env_file = ".env"

@@ -11,6 +11,7 @@ const BASE_URL = 'https://www.qjzxmd.cn';
 // API 端点
 const API = {
     LOGIN: '/api/auth/login',
+    WX_LOGIN: '/api/auth/wx-login',
     USER_ME: '/api/users/me',
     USER_ME_PASSWORD: '/api/users/me/password',
     USER_ME_ACTIVITIES: '/api/users/me/activities',
@@ -32,13 +33,14 @@ const API = {
 // ========================
 
 /**
- * 发起请求。自动附带 token，统一处理 401。
- * @param {string} url      - API 路径（如 API.USER_ME）
- * @param {string} method   - HTTP 方法，默认 GET
- * @param {object} data     - 请求体（POST/PUT）或查询参数（GET）
- * @returns {Promise<any>}  - 解析后的响应数据
+ * 发起请求。自动附带 token，并支持 401 静默登录重试。
+ * @param {string} url      - API 路径
+ * @param {string} method   - HTTP 方法
+ * @param {object} data     - 请求体或查询参数
+ * @param {boolean} isRetry - 是否是重试请求，防止死循环
+ * @returns {Promise<any>}
  */
-function request(url, method = 'GET', data = {}) {
+function request(url, method = 'GET', data = {}, isRetry = false) {
     const app = getApp();
     const token = app.globalData.token || wx.getStorageSync('token');
 
@@ -57,14 +59,41 @@ function request(url, method = 'GET', data = {}) {
             header,
             success(res) {
                 if (res.statusCode === 401) {
-                    // token 失效，清除并跳回登录页
-                    app.globalData.token = null;
-                    app.globalData.userInfo = null;
-                    wx.removeStorageSync('token');
-                    wx.reLaunch({ url: '/pages/login/login' });
-                    reject(new Error('未登录或登录已过期'));
+                    if (isRetry) {
+                        // 如果重试仍然报 401，说明静默登录失效（可能用户修改了密码或被禁用）
+                        app.globalData.token = null;
+                        app.globalData.userInfo = null;
+                        wx.removeStorageSync('token');
+                        wx.reLaunch({ url: '/pages/login/login' });
+                        reject(new Error('认证失效，请重新登录'));
+                        return;
+                    }
+
+                    // 尝试静默登录
+                    console.log('Token 可能失效，正在尝试静默登录重试...');
+                    wx.login({
+                        success: (loginRes) => {
+                            wxLogin(loginRes.code).then(authRes => {
+                                // 更新 token 并重新发起原请求
+                                app.globalData.token = authRes.access_token;
+                                app.globalData.userInfo = authRes.user;
+                                wx.setStorageSync('token', authRes.access_token);
+                                wx.setStorageSync('userInfo', authRes.user);
+
+                                // 发起重试请求
+                                request(url, method, data, true).then(resolve).catch(reject);
+                            }).catch(err => {
+                                // 静默登录失败，跳回登录页
+                                console.error('重试静默登录失败', err);
+                                wx.reLaunch({ url: '/pages/login/login' });
+                                reject(new Error('认证失效，请重新登录'));
+                            });
+                        },
+                        fail: reject
+                    });
                     return;
                 }
+
                 if (res.statusCode >= 200 && res.statusCode < 300) {
                     resolve(res.data);
                 } else {
@@ -84,8 +113,13 @@ function request(url, method = 'GET', data = {}) {
 // ========================
 
 /** 登录 */
-function login(employeeId, password) {
-    return request(API.LOGIN, 'POST', { employee_id: employeeId, password });
+function login(employeeId, password, code = null) {
+    return request(API.LOGIN, 'POST', { employee_id: employeeId, password, code });
+}
+
+/** 微信静默登录 */
+function wxLogin(code) {
+    return request(API.WX_LOGIN, 'POST', { code });
 }
 
 /** 获取当前用户信息 */
@@ -203,6 +237,7 @@ function getLeaveList(skip = 0, limit = 20) {
 module.exports = {
     BASE_URL,
     login,
+    wxLogin,
     getMe,
     updateMe,
     uploadAvatar,

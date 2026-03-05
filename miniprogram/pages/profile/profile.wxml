@@ -16,10 +16,10 @@
           </view>
         </view>
       </view>
-      <view class="user-name">{{userInfo.name || '未登录'}}</view>
+      <view class="user-name">{{userInfo.nickname || '未登录'}}</view>
       <view class="user-tags">
-        <text class="user-tag-text" wx:if="{{userInfo.nickname}}">{{userInfo.nickname}}</text>
-        <text class="user-tag-dot" wx:if="{{userInfo.nickname && userInfo.department}}">·</text>
+        <text class="user-tag-text" wx:if="{{userInfo.name}}">{{userInfo.name}}</text>
+        <text class="user-tag-dot" wx:if="{{userInfo.name && userInfo.department}}">·</text>
         <text class="user-tag-text" wx:if="{{userInfo.department}}">{{userInfo.department}}</text>
       </view>
       <view class="user-id-wrap">
