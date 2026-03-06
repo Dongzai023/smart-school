@@ -99,4 +99,5 @@ export const userApi = {
     update: (userId, data) => api.put(`/users/admin/${userId}`, data),
     delete: (userId) => api.delete(`/users/admin/${userId}`),
     updatePermissions: (userId, data) => api.put(`/users/admin/${userId}/permissions`, data),
+    unbindWx: (userId) => api.put(`/users/admin/${userId}/unbind-wx`),
 }

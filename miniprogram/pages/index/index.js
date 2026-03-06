@@ -207,7 +207,7 @@ Page({
         console.log("当前经度：", longitude);
         console.log("当前纬度：", latitude);
 
-        if (distance > 500) {
+        if (distance > 1500) {
           wx.showModal({
             title: '提示',
             content: '不在签到范围内',

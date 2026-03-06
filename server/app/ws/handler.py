@@ -57,7 +57,7 @@ async def agent_websocket(websocket: WebSocket, agent_key: str):
                 "task_id": "on_connect_sync",
                 "params": {
                     "image_id": image.id,
-                    "image_url": f"/api/images/file/{image.file_name}",
+                    "image_url": f"/uploads/{image.file_name}",
                     "assigned_group_id": image.assigned_group_id,
                     "is_default": image.is_default,
                 },

@@ -94,6 +94,20 @@ class SeewoAgent:
         with open(path, "r", encoding="utf-8") as f:
             return yaml.safe_load(f)
 
+    def _is_connected(self):
+        """Safely check if the WebSocket is connected (handles v12 and v14+)."""
+        if not self.ws:
+            return False
+        # v12.0 legacy check
+        if hasattr(self.ws, 'open'):
+            return self.ws.open
+        # v14.0+ check
+        try:
+            return self.ws.protocol.state.name == "OPEN"
+        except (AttributeError, Exception):
+            # Fallback: if we can't determine, assume closed if we hit an error
+            return False
+
     def _get_device_info(self):
         """Collect current device information."""
         return {
@@ -118,7 +132,7 @@ class SeewoAgent:
         """Periodically send heartbeat to server."""
         while self.running:
             try:
-                if self.ws and self.ws.open:
+                if self._is_connected():
                     msg = {
                         "type": "heartbeat",
                         "device_id": self.agent_key,
@@ -198,7 +212,7 @@ class SeewoAgent:
 
         # Send result back to server
         try:
-            if self.ws and self.ws.open:
+            if self._is_connected():
                 await self.ws.send(json.dumps(result))
         except Exception as e:
             logger.error(f"发送执行结果失败: {e}")

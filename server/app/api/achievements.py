@@ -9,7 +9,7 @@ from app.models.user import User
 from app.models.checkin_record import CheckinRecord
 from app.services.auth_service import get_current_user
 
-router = APIRouter(prefix="/api/achievements", tags=["成就"])
+router = APIRouter(prefix="/achievements", tags=["成就"])
 
 
 @router.get("")

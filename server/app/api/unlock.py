@@ -13,7 +13,7 @@ from app.models.log import OperationLog
 from app.services.auth_service import get_current_user
 from app.ws.manager import ws_manager
 
-router = APIRouter(prefix="/api/unlock", tags=["扫码解锁"])
+router = APIRouter(prefix="/unlock", tags=["扫码解锁"])
 
 
 class ScanUnlockRequest(BaseModel):

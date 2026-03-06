@@ -73,6 +73,11 @@
         <el-table-column label="操作" width="120" fixed="right">
           <template #default="{ row }">
             <el-button size="small" type="primary" link @click="openEditDialog(row)">编辑</el-button>
+            <el-popconfirm title="确定解绑此用户的微信?" @confirm="unbindWx(row)">
+              <template #reference>
+                <el-button size="small" type="warning" link>解绑微信</el-button>
+              </template>
+            </el-popconfirm>
             <el-popconfirm title="确定删除此用户?" @confirm="deleteUser(row)">
               <template #reference>
                 <el-button size="small" type="danger" link>删除</el-button>
@@ -376,6 +381,16 @@ async function deleteUser(user) {
     loadData()
   } catch (e) {
     ElMessage.error(e.message || '删除失败')
+  }
+}
+
+async function unbindWx(user) {
+  try {
+    await userApi.unbindWx(user.id)
+    ElMessage.success('微信已解绑')
+    loadData()
+  } catch (e) {
+    ElMessage.error(e.message || '解绑失败')
   }
 }
 

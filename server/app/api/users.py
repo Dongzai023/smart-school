@@ -14,7 +14,7 @@ from app.models.checkin_record import CheckinRecord
 from app.models.leave import Leave
 from app.services.auth_service import get_current_user, hash_password, require_admin
 
-router = APIRouter(prefix="/api/users", tags=["用户"])
+router = APIRouter(prefix="/users", tags=["用户"])
 
 
 # ========================
@@ -448,6 +448,23 @@ def update_user_permissions(
     db.commit()
     
     return {"message": "权限更新成功", "user_id": user_id}
+
+
+@router.put("/admin/{user_id}/unbind-wx")
+def unbind_wx(
+    user_id: int,
+    db: Session = Depends(get_db),
+    admin: User = Depends(require_admin)
+):
+    """管理员解绑微信"""
+    user = db.query(User).filter(User.id == user_id).first()
+    if not user:
+        raise HTTPException(status_code=404, detail="用户不存在")
+    
+    user.wx_openid = None
+    db.commit()
+    
+    return {"message": "微信解绑成功", "user_id": user_id}
 
 
 @router.get("/admin/stats")

@@ -6,7 +6,7 @@
 // ========================
 // 配置
 // ========================
-const BASE_URL = 'https://www.qjzxmd.cn';
+const BASE_URL = 'https://lock.qjzxmd.cn'; // Updated to match the recommended lock subdomain
 
 // API 端点
 const API = {
@@ -42,7 +42,7 @@ const API = {
  */
 function request(url, method = 'GET', data = {}, isRetry = false) {
     const app = getApp();
-    const token = app.globalData.token || wx.getStorageSync('token');
+    const token = (app && app.globalData) ? app.globalData.token : wx.getStorageSync('token');
 
     const header = {
         'Content-Type': 'application/json',
@@ -83,8 +83,13 @@ function request(url, method = 'GET', data = {}, isRetry = false) {
                                 // 发起重试请求
                                 request(url, method, data, true).then(resolve).catch(reject);
                             }).catch(err => {
-                                // 静默登录失败，跳回登录页
+                                // 静默登录失败，清除本地 Token 跳回登录页 (核心修复：防止登录循环)
                                 console.error('重试静默登录失败', err);
+                                app.globalData.token = null;
+                                app.globalData.userInfo = null;
+                                wx.removeStorageSync('token');
+                                wx.removeStorageSync('userInfo');
+
                                 wx.reLaunch({ url: '/pages/login/login' });
                                 reject(new Error('认证失效，请重新登录'));
                             });

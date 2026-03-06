@@ -76,12 +76,12 @@ app.include_router(control.router, prefix="/api")
 app.include_router(images.router, prefix="/api")
 app.include_router(unlock_requests.router, prefix="/api")
 app.include_router(logs.router, prefix="/api")
-app.include_router(unlock.router)
-app.include_router(checkin.router)
-app.include_router(statistics.router)
-app.include_router(leave.router)
-app.include_router(users.router)
-app.include_router(achievements.router)
+app.include_router(unlock.router, prefix="/api")
+app.include_router(checkin.router, prefix="/api")
+app.include_router(statistics.router, prefix="/api")
+app.include_router(leave.router, prefix="/api")
+app.include_router(users.router, prefix="/api")
+app.include_router(achievements.router, prefix="/api")
 app.include_router(ws_router) # WebSocket prefix /ws is already defined in handler
 
 

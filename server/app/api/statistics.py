@@ -10,7 +10,7 @@ from app.models.user import User
 from app.models.checkin_record import CheckinRecord
 from app.services.auth_service import get_current_user, require_admin
 
-router = APIRouter(prefix="/api/statistics", tags=["统计"])
+router = APIRouter(prefix="/statistics", tags=["统计"])
 
 
 def _get_date_range(period: str):

@@ -29,7 +29,7 @@ def list_images(db: Session = Depends(get_db), user: User = Depends(get_current_
             "id": img.id, "name": img.name, "file_name": img.file_name,
             "file_size": img.file_size, "is_default": img.is_default,
             "assigned_group_id": img.assigned_group_id,
-            "url": f"/api/images/file/{img.file_name}",
+            "url": f"/uploads/{img.file_name}",
             "created_at": img.created_at.isoformat() if img.created_at else None,
         }
         for img in images
@@ -87,7 +87,7 @@ async def upload_image(
         "action": "sync_lock_image",
         "params": {
             "image_id": image.id,
-            "image_url": f"/api/images/file/{unique_name}",
+            "image_url": f"/uploads/{unique_name}",
             "assigned_group_id": assigned_group_id,
             "is_default": is_default,
         },
@@ -120,7 +120,7 @@ async def set_default_image(image_id: int, db: Session = Depends(get_db), admin:
     await ws_manager.broadcast_all({
         "type": "command",
         "action": "sync_lock_image",
-        "params": {"image_id": image.id, "image_url": f"/api/images/file/{image.file_name}", "is_default": True},
+        "params": {"image_id": image.id, "image_url": f"/uploads/{image.file_name}", "is_default": True},
     })
     return {"message": "设置成功"}
 

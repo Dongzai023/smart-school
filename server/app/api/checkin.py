@@ -11,7 +11,7 @@ from app.models.user import User
 from app.models.checkin_record import CheckinRecord
 from app.services.auth_service import get_current_user
 
-router = APIRouter(prefix="/api/checkin", tags=["签到"])
+router = APIRouter(prefix="/checkin", tags=["签到"])
 
 
 # ========================
