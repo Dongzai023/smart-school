@@ -300,9 +300,11 @@ def get_records(
 @router.get("/admin/overview")
 def admin_get_overview(
     db: Session = Depends(get_db),
-    admin: User = Depends(require_admin)
+    current_user: User = Depends(get_current_user)
 ):
-    """管理员获取全校签到概览"""
+    """管理员/校长获取全校签到概览"""
+    if current_user.role not in ["admin", "principal"]:
+        raise HTTPException(status_code=403, detail="需要管理权限")
     today = date.today()
     
     # 今日应签到人数
@@ -340,10 +342,12 @@ def admin_get_user_stats(
     department: str = Query(None, description="部门筛选"),
     period: str = Query("week", description="统计周期"),
     db: Session = Depends(get_db),
-    admin: User = Depends(require_admin),
+    current_user: User = Depends(get_current_user),
     role: str = Query(None, description="角色筛选")
 ):
-    """管理员获取所有用户的签到统计"""
+    """管理员/校长获取所有用户的签到统计"""
+    if current_user.role not in ["admin", "principal"]:
+        raise HTTPException(status_code=403, detail="需要管理权限")
     start_date, end_date = _get_date_range(period)
     
     # 获取所有用户
@@ -414,9 +418,11 @@ def admin_get_user_records(
     page: int = Query(1, ge=1),
     page_size: int = Query(30, ge=1, le=50),
     db: Session = Depends(get_db),
-    admin: User = Depends(require_admin)
+    current_user: User = Depends(get_current_user)
 ):
-    """管理员获取指定用户的签到记录"""
+    """管理员/校长获取指定用户的签到记录"""
+    if current_user.role not in ["admin", "principal"]:
+        raise HTTPException(status_code=403, detail="需要管理权限")
     user = db.query(User).filter(User.id == user_id).first()
     if not user:
         raise HTTPException(status_code=404, detail="用户不存在")
