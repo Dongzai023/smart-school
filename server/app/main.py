@@ -134,7 +134,7 @@ def _ensure_principals_exist():
         if not xz01:
             xz01 = User(
                 username="xz01",
-                employee_id="XZ001",
+                employee_id="xz01",
                 real_name="校长(全校)",
                 password_hash=hash_password("123456"),
                 role="principal",
@@ -150,7 +150,7 @@ def _ensure_principals_exist():
         if not xz02:
             xz02 = User(
                 username="xz02",
-                employee_id="XZ002",
+                employee_id="xz02",
                 real_name="校长(班主任)",
                 password_hash=hash_password("123456"),
                 role="principal",
