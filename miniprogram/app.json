@@ -4,7 +4,8 @@
     "pages/index/index",
     "pages/statistics/statistics",
     "pages/profile/profile",
-    "pages/leave-application/leave-application"
+    "pages/leave-application/leave-application",
+    "pages/admin/checkin_dashboard/checkin_dashboard"
   ],
   "window": {
     "backgroundTextStyle": "light",
