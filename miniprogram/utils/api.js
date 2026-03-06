@@ -6,7 +6,7 @@
 // ========================
 // 配置
 // ========================
-const BASE_URL = 'https://lock.qjzxmd.cn'; // Updated to match the recommended lock subdomain
+const BASE_URL = 'https://www.qjzxmd.cn';
 
 // API 端点
 const API = {
