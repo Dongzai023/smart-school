@@ -1,9 +1,15 @@
 const api = require('../../../utils/api');
-const util = require('../../../utils/util');
+
+function formatDate(date) {
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const day = String(date.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
+}
 
 Page({
     data: {
-        selectedDate: util.formatDate(new Date()),
+        selectedDate: formatDate(new Date()),
         summary: {
             total: 0,
             signed: 0,
