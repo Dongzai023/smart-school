@@ -26,6 +26,7 @@ const API = {
     ACHIEVEMENTS: '/api/achievements',
     LEAVE_APPLY: '/api/leave',
     LEAVE_MY_LIST: '/api/leave/my',
+    STATS_PRINCIPAL: '/api/statistics/principal/checkin',
 };
 
 // ========================
@@ -257,4 +258,5 @@ module.exports = {
     getUserStats,
     applyLeave,
     getLeaveList,
+    getPrincipalCheckin: (params) => request(API.STATS_PRINCIPAL, 'GET', params),
 };

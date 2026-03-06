@@ -266,6 +266,12 @@ Page({
     };
   },
 
+  goToDashboard() {
+    wx.navigateTo({
+      url: '/pages/admin/checkin_dashboard/checkin_dashboard'
+    });
+  },
+
   switchTab(e) {
     const page = e.currentTarget.dataset.page;
     if (page === 'index') return;

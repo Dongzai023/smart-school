@@ -47,6 +47,16 @@ def init_db():
         except Exception as e:
             print(f"Migration error (wx_openid): {e}")
 
+        # 手动检查并添加 view_scope 列
+        try:
+            result = conn.execute(text("SHOW COLUMNS FROM users LIKE 'view_scope'"))
+            if not result.fetchone():
+                print("Adding missing column 'view_scope' to 'users' table...")
+                conn.execute(text("ALTER TABLE users ADD COLUMN view_scope VARCHAR(50) NULL AFTER role"))
+                conn.commit()
+        except Exception as e:
+            print(f"Migration error (view_scope): {e}")
+
         # 修复 updated_at 不能为空的问题
         try:
             print("Ensuring 'updated_at' is nullable with valid defaults...")

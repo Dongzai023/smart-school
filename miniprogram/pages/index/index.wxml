@@ -151,6 +151,22 @@
     </view>
   </view>
 
+  <!-- 管理端入口 (仅校长/管理员可见) -->
+  <view class="stats-card management-card" bindtap="goToDashboard" wx:if="{{userInfo.role === 'principal' || userInfo.role === 'admin'}}">
+    <view class="stats-icon-wrap" style="background: linear-gradient(135deg, #ff9a9e 0%, #fecfef 100%);">
+      <view class="stats-icon">
+        <image src="/assets/CodeBubbyAssets/2_517/1.svg" mode="aspectFit" style="width: 40rpx; height: 40rpx;"></image>
+      </view>
+    </view>
+    <view class="stats-info">
+      <text class="stats-title">教师签到管理看板</text>
+      <text class="stats-subtitle">SCHOOL MANAGEMENT CENTER</text>
+    </view>
+    <view class="arrow-icon">
+      <view class="arrow-line"></view>
+    </view>
+  </view>
+
 <!-- 底部信息 -->
 <view class="footer">
   <image class="footer-icon" src="/assets/CodeBubbyAssets/2_509/1.svg" mode="aspectFit"></image>

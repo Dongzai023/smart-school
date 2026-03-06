@@ -8,7 +8,9 @@ from sqlalchemy import func
 from app.database import get_db
 from app.models.user import User
 from app.models.checkin_record import CheckinRecord
-from app.services.auth_service import get_current_user, require_admin
+from app.services.auth_service import get_current_user, require_admin, hash_password
+from pydantic import BaseModel
+from typing import List, Optional
 
 router = APIRouter(prefix="/statistics", tags=["统计"])
 
@@ -450,4 +452,85 @@ def admin_get_user_records(
         },
         "records": result,
         "total": total
+    }
+
+@router.get("/principal/checkin")
+def get_principal_checkin(
+    checkin_date: date = Query(default=None),
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    """校长端查看全校/班主任签到情况"""
+    if current_user.role != "principal" and current_user.role != "admin":
+        raise HTTPException(status_code=403, detail="无权访问")
+
+    if not checkin_date:
+        checkin_date = date.today()
+
+    # 根据权限范围确定要查看的用户列表
+    user_query = db.query(User).filter(User.is_active == True)
+    if current_user.view_scope == "head_teacher":
+        user_query = user_query.filter(User.is_headmaster == True)
+    
+    # 排除管理员和校长自身（除非需要）
+    teachers = user_query.filter(User.role == "teacher").all()
+    teacher_ids = [t.id for t in teachers]
+
+    # 获取当天的所有签到记录
+    records = db.query(CheckinRecord).filter(
+        CheckinRecord.checkin_date == checkin_date,
+        CheckinRecord.user_id.in_(teacher_ids)
+    ).all()
+
+    # 聚合数据
+    record_map = {} # user_id -> [records]
+    for r in records:
+        if r.user_id not in record_map:
+            record_map[r.user_id] = []
+        record_map[r.user_id].append(r)
+
+    results = []
+    summary = {
+        "total": len(teachers),
+        "signed": 0,
+        "late": 0,
+        "absent": 0
+    }
+
+    for t in teachers:
+        t_records = record_map.get(t.id, [])
+        # 简单逻辑：如果今天有任何一条签到记录
+        has_signed = any(r.status in ("signed", "normal") for r in t_records)
+        has_late = any(r.status == "late" for r in t_records)
+        
+        status = "absent"
+        if has_signed:
+            status = "signed"
+            summary["signed"] += 1
+        elif has_late:
+            status = "late"
+            summary["late"] += 1
+        else:
+            summary["absent"] += 1
+
+        results.append({
+            "id": t.id,
+            "real_name": t.real_name,
+            "nickname": t.nickname,
+            "department": t.department,
+            "is_headmaster": t.is_headmaster,
+            "status": status,
+            "details": [
+                {
+                    "label": r.time_slot_label,
+                    "time": r.checkin_time.strftime("%H:%M") if r.checkin_time else None,
+                    "status": r.status
+                } for r in t_records
+            ]
+        })
+
+    return {
+        "date": checkin_date.isoformat(),
+        "summary": summary,
+        "teachers": results
     }

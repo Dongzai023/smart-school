@@ -1,0 +1,54 @@
+<view class="container">
+  <!-- 顶部统计卡片 -->
+  <view class="summary-cards">
+    <view class="card all">
+      <view class="value">{{summary.total}}</view>
+      <view class="label">应到</view>
+    </view>
+    <view class="card signed">
+      <view class="value">{{summary.signed}}</view>
+      <view class="label">已办</view>
+    </view>
+    <view class="card late">
+      <view class="value">{{summary.late}}</view>
+      <view class="label">迟到</view>
+    </view>
+    <view class="card absent">
+      <view class="value">{{summary.absent}}</view>
+      <view class="label">未办</view>
+    </view>
+  </view>
+
+  <!-- 日期筛选 -->
+  <view class="filter-section">
+    <picker mode="date" value="{{selectedDate}}" bindchange="onDateChange">
+      <view class="date-picker">
+        <text class="iconfont icon-calendar"></text>
+        <text>{{selectedDate}}</text>
+        <text class="arrow">▼</text>
+      </view>
+    </picker>
+  </view>
+
+  <!-- 教师列表 -->
+  <view class="list-section">
+    <view class="list-header">
+      <text class="col-name">姓名</text>
+      <text class="col-dept">部门</text>
+      <text class="col-status">状态</text>
+    </view>
+    <scroll-view scroll-y class="teacher-list">
+      <view wx:for="{{teachers}}" wx:key="id" class="list-item" bindtap="showDetails" data-item="{{item}}">
+        <view class="col-name">
+          <text>{{item.real_name || item.nickname}}</text>
+          <text wx:if="{{item.is_headmaster}}" class="badge-head">班</text>
+        </view>
+        <text class="col-dept">{{item.department || '-'}}</text>
+        <view class="col-status">
+          <text class="status-tag {{item.status}}">{{statusMap[item.status]}}</text>
+        </view>
+      </view>
+      <view wx:if="{{teachers.length === 0}}" class="empty-tip">暂无数据</view>
+    </scroll-view>
+  </view>
+</view>

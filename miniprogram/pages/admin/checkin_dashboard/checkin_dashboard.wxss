@@ -1,0 +1,114 @@
+.container {
+  padding: 20rpx;
+  background-color: #f5f7fa;
+  min-height: 100vh;
+}
+
+.summary-cards {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 30rpx;
+}
+
+.card {
+  flex: 1;
+  background: #fff;
+  padding: 20rpx;
+  margin: 0 5rpx;
+  border-radius: 12rpx;
+  text-align: center;
+  box-shadow: 0 4rpx 12rpx rgba(0,0,0,0.05);
+}
+
+.card .value {
+  font-size: 36rpx;
+  font-weight: bold;
+  color: #333;
+}
+
+.card .label {
+  font-size: 22rpx;
+  color: #999;
+  margin-top: 8rpx;
+}
+
+.card.all .value { color: #409eff; }
+.card.signed .value { color: #67c23a; }
+.card.late .value { color: #e6a23c; }
+.card.absent .value { color: #f56c6c; }
+
+.filter-section {
+  background: #fff;
+  padding: 20rpx;
+  border-radius: 12rpx;
+  margin-bottom: 20rpx;
+}
+
+.date-picker {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 28rpx;
+  color: #333;
+}
+
+.arrow {
+  font-size: 20rpx;
+  margin-left: 10rpx;
+  color: #ccc;
+}
+
+.list-section {
+  background: #fff;
+  border-radius: 12rpx;
+  overflow: hidden;
+}
+
+.list-header {
+  display: flex;
+  background: #f8f9fb;
+  padding: 24rpx 20rpx;
+  font-size: 26rpx;
+  font-weight: bold;
+  color: #666;
+  border-bottom: 1rpx solid #eee;
+}
+
+.list-item {
+  display: flex;
+  padding: 30rpx 20rpx;
+  font-size: 28rpx;
+  color: #333;
+  border-bottom: 1rpx solid #f5f5f5;
+  align-items: center;
+}
+
+.col-name { flex: 2; display: flex; align-items: center; }
+.col-dept { flex: 2; color: #999; font-size: 24rpx; }
+.col-status { flex: 1.2; text-align: right; }
+
+.badge-head {
+  background: #ff4d4f;
+  color: #fff;
+  font-size: 20rpx;
+  padding: 2rpx 6rpx;
+  border-radius: 4rpx;
+  margin-left: 10rpx;
+}
+
+.status-tag {
+  padding: 4rpx 16rpx;
+  border-radius: 20rpx;
+  font-size: 24rpx;
+}
+
+.status-tag.signed { background: #f0f9eb; color: #67c23a; }
+.status-tag.late { background: #fdf6ec; color: #e6a23c; }
+.status-tag.absent { background: #fef0f0; color: #f56c6c; }
+
+.empty-tip {
+  padding: 100rpx 0;
+  text-align: center;
+  color: #ccc;
+  font-size: 28rpx;
+}
