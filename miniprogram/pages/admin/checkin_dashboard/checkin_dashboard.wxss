@@ -1,114 +1,257 @@
-.container {
-  padding: 20rpx;
-  background-color: #f5f7fa;
-  min-height: 100vh;
+page {
+  background-color: #F8FAFC;
+  font-family: 'Inter', -apple-system, blinkmacsystemfont, 'Segoe UI', roboto, 'Helvetica Neue', arial, sans-serif;
+  color: #1E293B;
 }
 
-.summary-cards {
+.container {
+  padding: 0 0 40rpx;
+  display: flex;
+  flex-direction: column;
+}
+
+/* 页面头部 */
+.header-section {
+  background: white;
+  padding: 40rpx 32rpx;
+  border-bottom: 1rpx solid #F1F5F9;
+  position: sticky;
+  top: 0;
+  z-index: 100;
+}
+
+.header-content {
   display: flex;
   justify-content: space-between;
-  margin-bottom: 30rpx;
+  align-items: center;
 }
 
-.card {
-  flex: 1;
-  background: #fff;
-  padding: 20rpx;
-  margin: 0 5rpx;
-  border-radius: 12rpx;
-  text-align: center;
-  box-shadow: 0 4rpx 12rpx rgba(0,0,0,0.05);
-}
-
-.card .value {
+.main-title {
   font-size: 36rpx;
-  font-weight: bold;
-  color: #333;
+  font-weight: 900;
+  color: #0F172B;
+  display: block;
 }
 
-.card .label {
-  font-size: 22rpx;
-  color: #999;
-  margin-top: 8rpx;
+.sub-title {
+  font-size: 18rpx;
+  font-weight: 700;
+  color: #94A3B8;
+  letter-spacing: 2rpx;
 }
 
-.card.all .value { color: #409eff; }
-.card.signed .value { color: #67c23a; }
-.card.late .value { color: #e6a23c; }
-.card.absent .value { color: #f56c6c; }
-
-.filter-section {
-  background: #fff;
-  padding: 20rpx;
-  border-radius: 12rpx;
-  margin-bottom: 20rpx;
+.date-selector {
+  display: flex;
+  align-items: center;
+  background: #F1F5F9;
+  padding: 12rpx 24rpx;
+  border-radius: 20rpx;
+  font-size: 24rpx;
+  font-weight: 700;
+  color: #475569;
 }
 
-.date-picker {
+.calendar-icon {
+  width: 24rpx;
+  height: 24rpx;
+  margin-right: 12rpx;
+  opacity: 0.6;
+}
+
+/* 核心指标概览 */
+.stats-overview {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 20rpx;
+  padding: 32rpx;
+}
+
+.overview-item {
+  height: 160rpx;
+  border-radius: 40rpx;
+  position: relative;
+  overflow: hidden;
+  box-shadow: 0 10rpx 30rpx rgba(0, 0, 0, 0.05);
+}
+
+.item-inner {
+  padding: 32rpx;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+
+.item-value {
+  font-size: 48rpx;
+  font-weight: 900;
+  color: #0F172B;
+}
+
+.item-label {
+  font-size: 20rpx;
+  font-weight: 700;
+  color: #64748B;
+  margin-top: 4rpx;
+}
+
+/* 渐变色背景 */
+.total { background: linear-gradient(135deg, #F0F9FF 0%, #E0F2FE 100%); border: 1rpx solid #BAE6FD; }
+.signed { background: linear-gradient(135deg, #F0FDF4 0%, #DCFCE7 100%); border: 1rpx solid #BBF7D0; }
+.late { background: linear-gradient(135deg, #FFFBEB 0%, #FEF3C7 100%); border: 1rpx solid #FDE68A; }
+.absent { background: linear-gradient(135deg, #FEF2F2 0%, #FEE2E2 100%); border: 1rpx solid #FECACA; }
+
+/* 详情列表 */
+.details-section {
+  background: white;
+  margin: 0 32rpx;
+  border-radius: 48rpx;
+  padding: 40rpx 0 0;
+  min-height: 600rpx;
+  box-shadow: 0 4rpx 20rpx rgba(0, 0, 0, 0.02);
+}
+
+.section-title-wrap {
+  display: flex;
+  align-items: center;
+  padding: 0 40rpx 32rpx;
+}
+
+.title-dot {
+  width: 10rpx;
+  height: 32rpx;
+  background: #00BC7D;
+  border-radius: 5rpx;
+  margin-right: 16rpx;
+}
+
+.section-title {
+  font-size: 28rpx;
+  font-weight: 800;
+  color: #0F172B;
+}
+
+.records-scroll {
+  height: calc(100vh - 580rpx);
+}
+
+.teacher-card {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 32rpx 40rpx;
+  border-bottom: 1rpx solid #F1F5F9;
+}
+
+.teacher-card:active {
+  background: #F8FAFC;
+}
+
+.card-left {
+  display: flex;
+  align-items: center;
+}
+
+.avatar-placeholder {
+  width: 80rpx;
+  height: 80rpx;
+  background: #F1F5F9;
+  border-radius: 24rpx;
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 28rpx;
-  color: #333;
+  font-size: 32rpx;
+  font-weight: 800;
+  color: #94A3B8;
+  margin-right: 24rpx;
 }
 
-.arrow {
-  font-size: 20rpx;
-  margin-left: 10rpx;
-  color: #ccc;
-}
-
-.list-section {
-  background: #fff;
-  border-radius: 12rpx;
-  overflow: hidden;
-}
-
-.list-header {
+.name-row {
   display: flex;
-  background: #f8f9fb;
-  padding: 24rpx 20rpx;
-  font-size: 26rpx;
-  font-weight: bold;
-  color: #666;
-  border-bottom: 1rpx solid #eee;
-}
-
-.list-item {
-  display: flex;
-  padding: 30rpx 20rpx;
-  font-size: 28rpx;
-  color: #333;
-  border-bottom: 1rpx solid #f5f5f5;
   align-items: center;
 }
 
-.col-name { flex: 2; display: flex; align-items: center; }
-.col-dept { flex: 2; color: #999; font-size: 24rpx; }
-.col-status { flex: 1.2; text-align: right; }
-
-.badge-head {
-  background: #ff4d4f;
-  color: #fff;
-  font-size: 20rpx;
-  padding: 2rpx 6rpx;
-  border-radius: 4rpx;
-  margin-left: 10rpx;
+.real-name {
+  font-size: 28rpx;
+  font-weight: 800;
+  color: #1E293B;
+  margin-right: 12rpx;
 }
 
-.status-tag {
-  padding: 4rpx 16rpx;
-  border-radius: 20rpx;
+.badge-head {
+  font-size: 16rpx;
+  background: #ECFDF5;
+  color: #059669;
+  padding: 2rpx 10rpx;
+  border-radius: 6rpx;
+  font-weight: 800;
+  border: 1rpx solid #BBF7D0;
+}
+
+.dept-text {
+  font-size: 20rpx;
+  color: #94A3B8;
+  font-weight: 600;
+}
+
+.card-right {
+  display: flex;
+  align-items: center;
+}
+
+.status-indicator {
+  display: flex;
+  align-items: center;
+  padding: 8rpx 20rpx;
+  border-radius: 100rpx;
+  font-size: 22rpx;
+  font-weight: 800;
+  margin-right: 16rpx;
+}
+
+.status-dot {
+  width: 10rpx;
+  height: 10rpx;
+  border-radius: 50%;
+  margin-right: 12rpx;
+}
+
+.signed { color: #059669; background: #DCFCE7; }
+.signed .status-dot { background: #059669; }
+
+.late { color: #D97706; background: #FEF3C7; }
+.late .status-dot { background: #D97706; }
+
+.absent { color: #DC2626; background: #FEE2E2; }
+.absent .status-dot { background: #DC2626; }
+
+.arrow-right {
+  width: 24rpx;
+  height: 24rpx;
+  opacity: 0.3;
+}
+
+/* 空状态 */
+.empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding-top: 100rpx;
+  color: #94A3B8;
   font-size: 24rpx;
 }
 
-.status-tag.signed { background: #f0f9eb; color: #67c23a; }
-.status-tag.late { background: #fdf6ec; color: #e6a23c; }
-.status-tag.absent { background: #fef0f0; color: #f56c6c; }
+.empty-icon {
+  width: 200rpx;
+  height: 200rpx;
+  margin-bottom: 24rpx;
+  opacity: 0.5;
+}
 
-.empty-tip {
-  padding: 100rpx 0;
+/* 底部脚注 */
+.page-footer {
   text-align: center;
-  color: #ccc;
-  font-size: 28rpx;
+  padding: 40rpx 0;
+  color: #CBD5E1;
+  font-size: 18rpx;
+  font-weight: 700;
 }

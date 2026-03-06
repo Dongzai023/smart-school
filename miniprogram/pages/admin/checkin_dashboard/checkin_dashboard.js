@@ -56,7 +56,7 @@ Page({
     showDetails: function (e) {
         const item = e.currentTarget.dataset.item;
         if (item.details && item.details.length > 0) {
-            let detailStr = item.details.map(d => `${d.label}: ${d.time || '未签'} (${this.statusMap[d.status] || d.status})`).join('\n');
+            let detailStr = item.details.map(d => `${d.label}: ${d.time || '未签'} (${this.data.statusMap[d.status] || d.status})`).join('\n');
             wx.showModal({
                 title: `${item.real_name} 签到详情`,
                 content: detailStr,

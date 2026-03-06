@@ -1,54 +1,85 @@
 <view class="container">
-  <!-- 顶部统计卡片 -->
-  <view class="summary-cards">
-    <view class="card all">
-      <view class="value">{{summary.total}}</view>
-      <view class="label">应到</view>
-    </view>
-    <view class="card signed">
-      <view class="value">{{summary.signed}}</view>
-      <view class="label">已办</view>
-    </view>
-    <view class="card late">
-      <view class="value">{{summary.late}}</view>
-      <view class="label">迟到</view>
-    </view>
-    <view class="card absent">
-      <view class="value">{{summary.absent}}</view>
-      <view class="label">未办</view>
+  <!-- 页面头部 -->
+  <view class="header-section">
+    <view class="header-content">
+      <view class="title-wrap">
+        <text class="main-title">教师签到实时看板</text>
+        <text class="sub-title">REAL-TIME MONITORING CENTER</text>
+      </view>
+      <picker mode="date" value="{{selectedDate}}" bindchange="onDateChange">
+        <view class="date-selector">
+          <image class="calendar-icon" src="/assets/CodeBubbyAssets/2_517/1.svg" mode="aspectFit"></image>
+          <text>{{selectedDate}}</text>
+        </view>
+      </picker>
     </view>
   </view>
 
-  <!-- 日期筛选 -->
-  <view class="filter-section">
-    <picker mode="date" value="{{selectedDate}}" bindchange="onDateChange">
-      <view class="date-picker">
-        <text class="iconfont icon-calendar"></text>
-        <text>{{selectedDate}}</text>
-        <text class="arrow">▼</text>
+  <!-- 统计核心指标 -->
+  <view class="stats-overview">
+    <view class="overview-item total">
+      <view class="item-inner">
+        <text class="item-value">{{summary.total}}</text>
+        <text class="item-label">应到人数</text>
       </view>
-    </picker>
+    </view>
+    <view class="overview-item signed">
+      <view class="item-inner">
+        <text class="item-value">{{summary.signed}}</text>
+        <text class="item-label">正常签到</text>
+      </view>
+    </view>
+    <view class="overview-item late">
+      <view class="item-inner">
+        <text class="item-value">{{summary.late}}</text>
+        <text class="item-label">迟到人数</text>
+      </view>
+    </view>
+    <view class="overview-item absent">
+      <view class="item-inner">
+        <text class="item-value">{{summary.absent}}</text>
+        <text class="item-label">未签到</text>
+      </view>
+    </view>
   </view>
 
-  <!-- 教师列表 -->
-  <view class="list-section">
-    <view class="list-header">
-      <text class="col-name">姓名</text>
-      <text class="col-dept">部门</text>
-      <text class="col-status">状态</text>
+  <!-- 教师详情列表 -->
+  <view class="details-section">
+    <view class="section-title-wrap">
+      <view class="title-dot"></view>
+      <text class="section-title">教师出勤明细</text>
     </view>
-    <scroll-view scroll-y class="teacher-list">
-      <view wx:for="{{teachers}}" wx:key="id" class="list-item" bindtap="showDetails" data-item="{{item}}">
-        <view class="col-name">
-          <text>{{item.real_name || item.nickname}}</text>
-          <text wx:if="{{item.is_headmaster}}" class="badge-head">班</text>
+
+    <scroll-view scroll-y class="records-scroll">
+      <view wx:for="{{teachers}}" wx:key="id" class="teacher-card" bindtap="showDetails" data-item="{{item}}">
+        <view class="card-left">
+          <view class="avatar-placeholder">{{item.real_name[0] || 'T'}}</view>
+          <view class="name-info">
+            <view class="name-row">
+              <text class="real-name">{{item.real_name || item.nickname}}</text>
+              <text wx:if="{{item.is_headmaster}}" class="badge-head">班主任</text>
+            </view>
+            <text class="dept-text">{{item.department || '未分配部门'}}</text>
+          </view>
         </view>
-        <text class="col-dept">{{item.department || '-'}}</text>
-        <view class="col-status">
-          <text class="status-tag {{item.status}}">{{statusMap[item.status]}}</text>
+        <view class="card-right">
+          <view class="status-indicator {{item.status}}">
+            <view class="status-dot"></view>
+            <text>{{statusMap[item.status]}}</text>
+          </view>
+          <image class="arrow-right" src="/assets/CodeBubbyAssets/2_423/3.svg" mode="aspectFit"></image>
         </view>
       </view>
-      <view wx:if="{{teachers.length === 0}}" class="empty-tip">暂无数据</view>
+      
+      <view wx:if="{{teachers.length === 0}}" class="empty-state">
+        <image class="empty-icon" src="/assets/CodeBubbyAssets/2_423/5.svg" mode="aspectFit"></image>
+        <text>当日暂无签到数据</text>
+      </view>
     </scroll-view>
+  </view>
+
+  <!-- 底部备案信息 -->
+  <view class="page-footer">
+    <text>清涧中学教师数字化管理平台 · 管理专用</text>
   </view>
 </view>
