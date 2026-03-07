@@ -1,85 +1,184 @@
 <view class="container">
-  <!-- 页面头部 -->
-  <view class="header-section">
-    <view class="header-content">
-      <view class="title-wrap">
-        <text class="main-title">教师签到实时看板</text>
-        <text class="sub-title">REAL-TIME MONITORING CENTER</text>
-      </view>
-      <picker mode="date" value="{{selectedDate}}" bindchange="onDateChange">
-        <view class="date-selector">
-          <image class="calendar-icon" src="/assets/CodeBubbyAssets/2_517/1.svg" mode="aspectFit"></image>
-          <text>{{selectedDate}}</text>
-        </view>
-      </picker>
-    </view>
-  </view>
-
-  <!-- 统计核心指标 -->
-  <view class="stats-overview">
-    <view class="overview-item total">
-      <view class="item-inner">
-        <text class="item-value">{{summary.total}}</text>
-        <text class="item-label">应到人数</text>
-      </view>
-    </view>
-    <view class="overview-item signed">
-      <view class="item-inner">
-        <text class="item-value">{{summary.signed}}</text>
-        <text class="item-label">正常签到</text>
-      </view>
-    </view>
-    <view class="overview-item late">
-      <view class="item-inner">
-        <text class="item-value">{{summary.late}}</text>
-        <text class="item-label">迟到人数</text>
-      </view>
-    </view>
-    <view class="overview-item absent">
-      <view class="item-inner">
-        <text class="item-value">{{summary.absent}}</text>
-        <text class="item-label">未签到</text>
-      </view>
-    </view>
-  </view>
-
-  <!-- 教师详情列表 -->
-  <view class="details-section">
-    <view class="section-title-wrap">
-      <view class="title-dot"></view>
-      <text class="section-title">教师出勤明细</text>
-    </view>
-
-    <scroll-view scroll-y class="records-scroll">
-      <view wx:for="{{teachers}}" wx:key="id" class="teacher-card" bindtap="showDetails" data-item="{{item}}">
-        <view class="card-left">
-          <view class="avatar-placeholder">{{item.real_name[0] || 'T'}}</view>
-          <view class="name-info">
-            <view class="name-row">
-              <text class="real-name">{{item.real_name || item.nickname}}</text>
-              <text wx:if="{{item.is_headmaster}}" class="badge-head">班主任</text>
+    <!-- Header Section -->
+    <view class="page-header">
+        <view class="ph-content">
+            <view class="ph-top">
+                <view class="pht-left">
+                    <text class="ph-title">清涧中学</text>
+                    <text class="ph-subtitle">智慧考勤看板</text>
+                </view>
+                <view class="pht-right">
+                    <text class="ph-icon">📊</text>
+                </view>
             </view>
-            <text class="dept-text">{{item.department || '未分配部门'}}</text>
-          </view>
         </view>
-        <view class="card-right">
-          <view class="status-indicator {{item.status}}">
-            <view class="status-dot"></view>
-            <text>{{statusMap[item.status]}}</text>
-          </view>
-          <image class="arrow-right" src="/assets/CodeBubbyAssets/2_423/3.svg" mode="aspectFit"></image>
-        </view>
-      </view>
-      
-      <view wx:if="{{teachers.length === 0}}" class="empty-state">
-        <image class="empty-icon" src="/assets/CodeBubbyAssets/2_423/5.svg" mode="aspectFit"></image>
-        <text>当日暂无签到数据</text>
-      </view>
-    </scroll-view>
-  </view>
 
-  <!-- 底部备案信息 -->
-  <view class="page-footer">
-    <text>清涧中学教师数字化管理平台 · 管理专用</text>
-  </view>
+        <!-- Tab Navigation -->
+        <view class="tab-wrapper">
+            <scroll-view class="tab-scroll" scroll-x>
+                <view class="tab-list">
+                    <view wx:for="{{periods}}" wx:key="id"
+                          class="tab-item {{activePeriod === item.id ? 'active' : ''}}"
+                          bindtap="onPeriodChange" data-period="{{item.id}}">
+                        {{item.label}}
+                    </view>
+                </view>
+            </scroll-view>
+        </view>
+    </view>
+
+    <!-- Main Content -->
+    <view class="main-content">
+        <!-- Overview Card -->
+        <view class="overview-card">
+            <view class="oc-header">
+                <text class="och-title">出勤概览</text>
+                <view class="och-badge {{badgeStatus}}">
+                    {{badgeText}}
+                </view>
+            </view>
+
+            <view class="oc-body">
+                <view class="ocb-main">
+                    <view class="ocbm-circle">
+                        <view class="ocbmc-ring" style="background: conic-gradient(#00BC7D {{summary.rate}}%, #e8f5e9 0);"></view>
+                        <view class="ocbmc-inner">
+                            <text class="ocbmci-value">{{summary.rate}}</text>
+                            <text class="ocbmci-unit">%</text>
+                        </view>
+                    </view>
+                    <view class="ocbm-info">
+                        <text class="ocbm-label">应到 {{summary.total}} 人</text>
+                        <text class="ocbm-desc">实到 {{summary.normal_count}} 人</text>
+                    </view>
+                </view>
+
+                <view class="ocb-stats">
+                    <view class="ocbs-item">
+                        <text class="ocbsi-label">迟到</text>
+                        <text class="ocbsi-value">{{summary.late_count}}</text>
+                    </view>
+                    <view class="ocbs-divider"></view>
+                    <view class="ocbs-item">
+                        <text class="ocbsi-label">缺勤</text>
+                        <text class="ocbsi-value">{{summary.absent_count}}</text>
+                    </view>
+                    <view class="ocbs-divider"></view>
+                    <view class="ocbs-item">
+                        <text class="ocbsi-label">请假</text>
+                        <text class="ocbsi-value">{{summary.leave_count || 0}}</text>
+                    </view>
+                </view>
+            </view>
+        </view>
+
+        <!-- Stats Grid -->
+        <view class="stats-section">
+            <view class="ss-card">
+                <view class="ssc-icon green">✓</view>
+                <view class="ssc-info">
+                    <text class="ssci-label">正常签到</text>
+                    <text class="ssci-value">{{summary.normal_count}}</text>
+                    <text class="ssci-percent">{{percentages.normal}}%</text>
+                </view>
+                <view class="ssc-progress">
+                    <view class="sscp-bar" style="width: {{percentages.normal}}%;"></view>
+                </view>
+            </view>
+
+            <view class="ss-card">
+                <view class="ssc-icon orange">⚠</view>
+                <view class="ssc-info">
+                    <text class="ssci-label">迟到人数</text>
+                    <text class="ssci-value">{{summary.late_count}}</text>
+                    <text class="ssci-percent">{{percentages.late}}%</text>
+                </view>
+                <view class="ssc-progress">
+                    <view class="sscp-bar orange" style="width: {{percentages.late}}%;"></view>
+                </view>
+            </view>
+
+            <view class="ss-card">
+                <view class="ssc-icon red">✗</view>
+                <view class="ssc-info">
+                    <text class="ssci-label">缺勤预警</text>
+                    <text class="ssci-value">{{summary.absent_count}}</text>
+                    <text class="ssci-percent">{{percentages.absent}}%</text>
+                </view>
+                <view class="ssc-progress">
+                    <view class="sscp-bar red" style="width: {{percentages.absent}}%;"></view>
+                </view>
+            </view>
+
+            <view class="ss-card">
+                <view class="ssc-icon purple">🏠</view>
+                <view class="ssc-info">
+                    <text class="ssci-label">请假审批</text>
+                    <text class="ssci-value">{{summary.leave_count || 0}}</text>
+                    <text class="ssci-percent">{{percentages.leave}}%</text>
+                </view>
+                <view class="ssc-progress">
+                    <view class="sscp-bar purple" style="width: {{percentages.leave}}%;"></view>
+                </view>
+            </view>
+        </view>
+
+        <!-- Abnormal List -->
+        <view class="abnormal-section" wx:if="{{categories && (categories.absent.length > 0 || categories.late.length > 0)}}">
+            <view class="abs-header">
+                <view class="abh-left">
+                    <text class="abh-title">异常名单</text>
+                    <view class="abh-badge">{{categories.absent.length + categories.late.length}}</view>
+                </view>
+            </view>
+
+            <view class="abs-list">
+                <view class="abl-item" wx:for="{{categories.absent}}" wx:key="id" wx:if="{{item.real_name}}">
+                    <view class="abli-avatar">
+                        <image class="abli-avatar-img" src="{{item.display_avatar}}" mode="aspectFill"></image>
+                    </view>
+                    <view class="abli-info">
+                        <text class="abli-name">{{item.real_name}}</text>
+                        <text class="abli-dept">{{item.department || ''}}</text>
+                    </view>
+                    <view class="abli-tag red">未签到</view>
+                </view>
+
+                <view class="abl-item" wx:for="{{categories.late}}" wx:key="id" wx:if="{{item.real_name}}">
+                    <view class="abli-avatar">
+                        <image class="abli-avatar-img" src="{{item.display_avatar}}" mode="aspectFill"></image>
+                    </view>
+                    <view class="abli-info">
+                        <text class="abli-name">{{item.real_name}}</text>
+                        <text class="abli-dept">{{item.department || ''}}</text>
+                    </view>
+                    <view class="abli-tag orange">迟到 ×{{item.record_count || 1}}</view>
+                </view>
+            </view>
+        </view>
+
+        <!-- Normal List -->
+        <view class="normal-section" wx:if="{{categories}}">
+            <view class="ns-header" bindtap="toggleCategory" data-cat="normal">
+                <view class="nsh-left">
+                    <text class="nsh-title">正常签到</text>
+                    <text class="nsh-count">{{summary.normal_count}}人</text>
+                </view>
+                <view class="nsh-arrow {{expanded.normal ? 'up' : 'down'}}">
+                    <text>▼</text>
+                </view>
+            </view>
+
+            <view class="ns-grid" wx:if="{{expanded.normal}}">
+                <view class="nsg-item" wx:for="{{categories.normal}}" wx:key="id" wx:if="{{item.real_name}}">
+                    {{item.real_name}}
+                </view>
+            </view>
+        </view>
+    </view>
+
+    <!-- Loading -->
+    <view class="loading-mask" wx:if="{{loading}}">
+        <view class="loader"></view>
+    </view>
 </view>

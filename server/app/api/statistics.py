@@ -392,6 +392,8 @@ def admin_get_user_stats(
             "username": user.username,
             "employee_id": user.employee_id or user.username,
             "real_name": user.real_name,
+            "nickname": user.nickname,
+            "avatar_url": user.avatar_url,
             "department": user.department or "",
             "role": user.role,
             "is_headmaster": user.is_headmaster or user.role == "head_teacher",
@@ -460,83 +462,130 @@ def admin_get_user_records(
         "total": total
     }
 
-@router.get("/principal/checkin")
-def get_principal_checkin(
-    checkin_date: date = Query(default=None),
+@router.get("/principal/dashboard")
+def principal_get_dashboard(
+    period: str = Query("today", description="周期: session/today/week/month/semester"),
+    checkin_date: Optional[date] = Query(None),
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user)
 ):
-    """校长端查看全校/班主任签到情况"""
-    if current_user.role != "principal" and current_user.role != "admin":
+    """校长端多维度签到看板"""
+    if current_user.role not in ["admin", "principal"]:
         raise HTTPException(status_code=403, detail="无权访问")
 
     if not checkin_date:
         checkin_date = date.today()
 
-    # 根据权限范围确定要查看的用户列表
+    # 1. 确定时间范围与时段
+    start_date = checkin_date
+    end_date = checkin_date
+    is_session_mode = (period == "session")
+    
+    if period == "week":
+        start_date = checkin_date - timedelta(days=checkin_date.weekday())
+        end_date = start_date + timedelta(days=6)
+    elif period == "month":
+        start_date = checkin_date.replace(day=1)
+        # 简单处理：本月最后一天
+        if start_date.month == 12:
+            end_date = date(start_date.year, 12, 31)
+        else:
+            end_date = start_date.replace(month=start_date.month + 1, day=1) - timedelta(days=1)
+    elif period == "semester":
+        # 近 180 天
+        start_date = checkin_date - timedelta(days=180)
+        end_date = checkin_date
+
+    # 2. 确定用户范围
     user_query = db.query(User).filter(User.is_active == True)
     if current_user.view_scope == "head_teacher":
         user_query = user_query.filter(User.is_headmaster == True)
     
-    # 排除管理员和校长自身（除非需要）
-    teachers = user_query.filter(User.role == "teacher").all()
+    # 排除管理员和校长自身，看老师和班主任
+    teachers = user_query.filter(User.role.in_(["teacher", "head_teacher"])).all()
     teacher_ids = [t.id for t in teachers]
 
-    # 获取当天的所有签到记录
-    records = db.query(CheckinRecord).filter(
-        CheckinRecord.checkin_date == checkin_date,
-        CheckinRecord.user_id.in_(teacher_ids)
-    ).all()
+    # 3. 获取签到记录
+    records_query = db.query(CheckinRecord).filter(
+        CheckinRecord.user_id.in_(teacher_ids),
+        CheckinRecord.checkin_date >= start_date,
+        CheckinRecord.checkin_date <= end_date
+    )
+    
+    # 特殊处理：本次 (Session) 模式
+    current_slot = None
+    if is_session_mode:
+        now_time = datetime.now().strftime("%H:%M")
+        slots = get_user_time_slots(False)
+        for s in reversed(slots):
+            if now_time >= s["start"]:
+                current_slot = s
+                break
+        if not current_slot: current_slot = slots[0]
+        
+        records_query = records_query.filter(
+            CheckinRecord.checkin_date == checkin_date,
+            CheckinRecord.time_slot_id == current_slot["id"]
+        )
 
-    # 聚合数据
-    record_map = {} # user_id -> [records]
+    records = records_query.all()
+
+    # 4. 数据聚合与人员分类
+    record_map = {}
     for r in records:
-        if r.user_id not in record_map:
-            record_map[r.user_id] = []
+        if r.user_id not in record_map: record_map[r.user_id] = []
         record_map[r.user_id].append(r)
 
-    results = []
-    summary = {
-        "total": len(teachers),
-        "signed": 0,
-        "late": 0,
-        "absent": 0
+    categories = {
+        "normal": [], # 正常
+        "late": [],   # 迟到
+        "absent": []  # 未签
     }
 
     for t in teachers:
         t_records = record_map.get(t.id, [])
-        # 简单逻辑：如果今天有任何一条签到记录
-        has_signed = any(r.status in ("signed", "normal") for r in t_records)
-        has_late = any(r.status == "late" for r in t_records)
-        
-        status = "absent"
-        if has_signed:
-            status = "signed"
-            summary["signed"] += 1
-        elif has_late:
-            status = "late"
-            summary["late"] += 1
-        else:
-            summary["absent"] += 1
-
-        results.append({
+        teacher_info = {
             "id": t.id,
             "real_name": t.real_name,
             "nickname": t.nickname,
-            "department": t.department,
+            "avatar_url": t.avatar_url,
+            "department": t.department or "校办公室",
             "is_headmaster": t.is_headmaster,
-            "status": status,
-            "details": [
-                {
-                    "label": r.time_slot_label,
-                    "time": r.checkin_time.strftime("%H:%M") if r.checkin_time else None,
-                    "status": r.status
-                } for r in t_records
-            ]
-        })
+            "record_count": len(t_records)
+        }
+
+        if is_session_mode or period == "today":
+            has_signed = any(r.status in ("signed", "normal") for r in t_records)
+            has_late = any(r.status == "late" for r in t_records)
+            if has_signed: categories["normal"].append(teacher_info)
+            elif has_late: categories["late"].append(teacher_info)
+            else: categories["absent"].append(teacher_info)
+        else:
+            has_absent = any(r.status == "absent" for r in t_records)
+            has_late = any(r.status == "late" for r in t_records)
+            
+            if not t_records:
+                categories["absent"].append(teacher_info)
+            elif has_absent:
+                categories["absent"].append(teacher_info)
+            elif has_late:
+                categories["late"].append(teacher_info)
+            else:
+                categories["normal"].append(teacher_info)
+
+    total_teachers = len(teachers)
+    summary = {
+        "total": total_teachers,
+        "normal_count": len(categories["normal"]),
+        "late_count": len(categories["late"]),
+        "absent_count": len(categories["absent"]),
+        "rate": round(len(categories["normal"]) / total_teachers * 100, 1) if total_teachers else 0
+    }
 
     return {
-        "date": checkin_date.isoformat(),
+        "period": period,
+        "session_label": current_slot["label"] if current_slot else None,
+        "date_range": f"{start_date.isoformat()} ~ {end_date.isoformat()}",
         "summary": summary,
-        "teachers": results
+        "categories": categories
     }
