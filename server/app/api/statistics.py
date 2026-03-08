@@ -449,7 +449,8 @@ def admin_get_user_records(
 @router.get("/diag/users")
 def diag_users(db: Session = Depends(get_db)):
     """Diagnostic endpoint to check all users."""
-    return "DIAG_ENDPOINT_V4_WORKING"
+    users = db.query(User).limit(500).all()
+    return [{"id": u.id, "username": u.username, "role": u.role, "scope": u.view_scope, "is_hm": u.is_headmaster, "emp_id": u.employee_id} for u in users]
 
 @router.get("/principal/dashboard")
 def principal_get_dashboard(
