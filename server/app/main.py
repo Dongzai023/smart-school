@@ -126,44 +126,18 @@ def _ensure_admin_exists():
     finally:
         db.close()
 def _ensure_principals_exist():
-    """Ensure principal accounts exist for management viewing."""
+    """Ensure principal accounts exist for management viewing. Removed xz01/xz02."""
     db = SessionLocal()
     try:
-        # 账号 A: xz01 (全校权限)
-        xz01 = db.query(User).filter(User.username == "xz01").first()
-        if not xz01:
-            xz01 = User(
-                username="xz01",
-                employee_id="xz01",
-                real_name="校长(全校)",
-                password_hash=hash_password("123456"),
-                role="principal",
-                view_scope="all",
-                department="校办",
-                is_verified=True
-            )
-            db.add(xz01)
-            logger.info("Created principal account: xz01")
-
-        # 账号 B: xz02 (仅班主任)
-        xz02 = db.query(User).filter(User.username == "xz02").first()
-        if not xz02:
-            xz02 = User(
-                username="xz02",
-                employee_id="xz02",
-                real_name="校长(班主任)",
-                password_hash=hash_password("123456"),
-                role="principal",
-                view_scope="head_teacher",
-                department="政教处",
-                is_verified=True
-            )
-            db.add(xz02)
-            logger.info("Created principal account: xz02")
-
+        # Cleanup old accounts if they exist
+        for old_user in ["xz01", "xz02"]:
+            user = db.query(User).filter(User.username == old_user).first()
+            if user:
+                db.delete(user)
+                logger.info(f"Cleaned up old account: {old_user}")
         db.commit()
     except Exception as e:
-        logger.error(f"Error seeding principal accounts: {e}")
+        logger.error(f"Error cleaning up old accounts: {e}")
         db.rollback()
     finally:
         db.close()

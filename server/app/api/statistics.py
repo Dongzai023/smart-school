@@ -515,29 +515,29 @@ def principal_get_dashboard(
         end_date = checkin_date
 
     # 1. 确定标题与权限范围
-    curr_name = str(current_user.username).strip().lower()
-    curr_emp_id = str(current_user.employee_id).strip().lower() if getattr(current_user, 'employee_id', None) else ""
+    username = str(current_user.username).strip().lower()
+    employee_id = str(current_user.employee_id).strip().lower() if getattr(current_user, 'employee_id', None) else ""
     
-    # 兼容 xz01/xz001 和 xz02/xz002
-    is_xz01_variant = (curr_name in ["xz01", "xz001"] or curr_emp_id in ["xz01", "xz001"])
-    is_xz02_variant = (curr_name in ["xz02", "xz002"] or curr_emp_id in ["xz02", "xz002"])
+    # 彻底检查 xz001 和 xz002 标识
+    is_xz001 = (username == "xz001" or employee_id == "xz001")
+    is_xz002 = (username == "xz002" or employee_id == "xz002")
     
-    # 默认值
     dashboard_title = "清涧中学签到数据看板"
     force_headmaster_view = False
     
-    # 逻辑判断 (xz01/xz001 优先级最高，确保完全访问)
-    if is_xz01_variant:
+    # xz001 优先级最高：看全校
+    if is_xz001:
         dashboard_title = "清涧中学签到数据看板"
         force_headmaster_view = False
-    elif is_xz02_variant:
+    # xz002 优先级第二：仅看班主任
+    elif is_xz002:
         dashboard_title = "清涧中学班主任签到数据看板"
         force_headmaster_view = True
+    # 其他根据权限范围判定
     elif current_user.view_scope == "head_teacher" or current_user.role == "head_teacher":
         dashboard_title = "清涧中学班主任签到数据看板"
         force_headmaster_view = True
     else:
-        # 其他教育处/管理员/默认情况
         dashboard_title = "清涧中学签到数据看板"
         force_headmaster_view = False
 
@@ -547,11 +547,32 @@ def principal_get_dashboard(
     if force_headmaster_view:
         user_query = user_query.filter(User.is_headmaster == True)
     
-    # 排除管理员和校长自身，看老师和班主任
-    teachers = user_query.filter(User.role.in_(["teacher", "head_teacher"])).all()
+    # 核心：获取所有展示对象 (排除管理员和当前查看者)
+    teachers = user_query.filter(User.role != "admin", User.id != current_user.id).all()
     teacher_ids = [t.id for t in teachers]
 
     # 3. 获取签到记录
+    if not teacher_ids:
+        # 如果没有符合条件的老师，返回空统计
+        summary = {"total": 0, "normal_count": 0, "late_count": 0, "absent_count": 0, "rate": 0, "leave_count": 0}
+        return {
+            "period": period,
+            "dashboard_title": dashboard_title,
+            "session_label": None,
+            "date_range": f"{start_date.isoformat()} ~ {end_date.isoformat()}",
+            "summary": summary,
+            "categories": {"normal": [], "late": [], "absent": []},
+            "debug_user": {
+                "id": current_user.id,
+                "username": username,
+                "emp_id": employee_id,
+                "is_xz001": is_xz001,
+                "is_xz002": is_xz002,
+                "force_hm": force_headmaster_view,
+                "msg": "No teachers found matching criteria"
+            }
+        }
+
     records_query = db.query(CheckinRecord).filter(
         CheckinRecord.user_id.in_(teacher_ids),
         CheckinRecord.checkin_date >= start_date,
@@ -625,6 +646,7 @@ def principal_get_dashboard(
         "normal_count": len(categories["normal"]),
         "late_count": len(categories["late"]),
         "absent_count": len(categories["absent"]),
+        "leave_count": 0, # Placeholder
         "rate": round(len(categories["normal"]) / total_teachers * 100, 1) if total_teachers else 0
     }
 
@@ -637,12 +659,12 @@ def principal_get_dashboard(
         "categories": categories,
         "debug_user": {
             "id": current_user.id,
-            "username": current_user.username,
-            "employee_id": getattr(current_user, 'employee_id', 'N/A'),
+            "username": username,
+            "employee_id": employee_id,
             "role": current_user.role,
             "view_scope": current_user.view_scope,
-            "is_xz01": is_xz01_variant,
-            "is_xz02": is_xz02_variant,
+            "is_xz001": is_xz001,
+            "is_xz002": is_xz002,
             "force_headmaster": force_headmaster_view,
             "teacher_count": len(teachers)
         }
