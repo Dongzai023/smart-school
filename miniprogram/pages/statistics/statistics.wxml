@@ -1,10 +1,13 @@
 <view class="app-root">
   <!-- 1. Header Area (Non-scrollable) -->
-  <view class="app-header">
+  <view class="app-header-light">
     <view class="status-bar-filler"></view>
     <view class="header-main">
       <view class="title-group">
-        <text class="title-primary">数据报表</text>
+        <view class="title-row">
+          <view class="title-dot"></view>
+          <text class="title-primary">数据报表</text>
+        </view>
         <text class="title-secondary">{{currentDate}}</text>
       </view>
       <view class="sync-indicator">
@@ -14,11 +17,11 @@
     </view>
     
     <view class="tab-scroller">
-      <view class="tab-nav">
+      <view class="tab-nav-light">
         <view class="tab-item {{selectedTab === 'week' ? 'active' : ''}}" bindtap="onTabSwitch" data-tab="week">本周</view>
         <view class="tab-item {{selectedTab === 'month' ? 'active' : ''}}" bindtap="onTabSwitch" data-tab="month">本月</view>
         <view class="tab-item {{selectedTab === 'semester' ? 'active' : ''}}" bindtap="onTabSwitch" data-tab="semester">学期</view>
-        <view class="tab-active-bg" style="left: {{selectedTab === 'week' ? '0' : (selectedTab === 'month' ? '33.3%' : '66.6%')}}"></view>
+        <view class="tab-active-bg-light" style="left: {{selectedTab === 'week' ? '0' : (selectedTab === 'month' ? '33.3%' : '66.6%')}}"></view>
       </view>
     </view>
   </view>
@@ -183,25 +186,25 @@
   </scroll-view>
 
   <!-- 3. Footer Area (Non-scrollable) -->
-  <view class="app-footer">
-    <view class="nav-item" bindtap="switchTab" data-page="index">
-      <view class="nav-ic-box">
-        <image src="/assets/CodeBubbyAssets/5_4/1.svg"></image>
+  <view class="tab-bar">
+    <view class="tab-item" bindtap="switchTab" data-page="index">
+      <view class="tab-icon">
+        <image class="tab-icon-img" src="/assets/CodeBubbyAssets/5_4/1.svg" mode="aspectFit"></image>
       </view>
-      <text>打卡</text>
+      <text class="tab-text">签到打卡</text>
     </view>
-    <view class="nav-item active">
-      <view class="nav-ic-box">
-        <image src="/assets/CodeBubbyAssets/5_4/2.svg"></image>
+    <view class="tab-item tab-active" bindtap="switchTab" data-page="statistics">
+      <image class="tab-active-bg" src="/assets/CodeBubbyAssets/5_4/4.svg" mode="aspectFit"></image>
+      <view class="tab-icon">
+        <image class="tab-icon-img" src="/assets/CodeBubbyAssets/5_4/2.svg" mode="aspectFit"></image>
       </view>
-      <text>统计</text>
+      <text class="tab-text tab-text-active">统计报表</text>
     </view>
-    <view class="nav-item" bindtap="switchTab" data-page="profile">
-      <view class="nav-ic-box">
-        <image src="/assets/CodeBubbyAssets/5_4/3.svg"></image>
+    <view class="tab-item" bindtap="switchTab" data-page="profile">
+      <view class="tab-icon">
+        <image class="tab-icon-img" src="/assets/CodeBubbyAssets/5_4/3.svg" mode="aspectFit"></image>
       </view>
-      <text>我的</text>
+      <text class="tab-text">个人中心</text>
     </view>
-    <view class="safe-area-bottom"></view>
   </view>
 </view>

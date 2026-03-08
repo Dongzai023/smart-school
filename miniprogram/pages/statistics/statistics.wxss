@@ -16,18 +16,17 @@ page {
   background-color: #f8fafc;
 }
 
-/* 1. Header (Fixed Height, Not Scrollable) */
-.app-header {
-  flex: none; /* Do not shrink or grow */
-  background-color: #0f172a;
-  border-bottom-left-radius: 40rpx;
-  border-bottom-right-radius: 40rpx;
-  box-shadow: 0 4rpx 30rpx rgba(0, 0, 0, 0.1);
+/* 1. Header (Light Theme) */
+.app-header-light {
+  flex: none;
+  background-color: #ffffff;
+  padding-bottom: 24rpx;
+  border-bottom: 1rpx solid #f1f5f9;
   z-index: 10;
 }
 
 .status-bar-filler {
-  height: calc(32rpx + env(safe-area-inset-top));
+  height: calc(24rpx + env(safe-area-inset-top));
 }
 
 .header-main {
@@ -42,23 +41,37 @@ page {
   flex-direction: column;
 }
 
+.title-row {
+  display: flex;
+  align-items: center;
+  margin-bottom: 6rpx;
+}
+
+.title-dot {
+  width: 8rpx;
+  height: 32rpx;
+  background: #00BC7D;
+  border-radius: 4rpx;
+  margin-right: 16rpx;
+}
+
 .title-primary {
   font-size: 38rpx;
   font-weight: 800;
-  color: #ffffff;
+  color: #0f172a;
   letter-spacing: 1rpx;
 }
 
 .title-secondary {
   font-size: 22rpx;
   color: #94a3b8;
-  margin-top: 6rpx;
+  margin-left: 24rpx; /* Offset for the dot width */
 }
 
 .sync-indicator {
   display: flex;
   align-items: center;
-  background: rgba(16, 185, 129, 0.15);
+  background: #f0fdf4;
   padding: 10rpx 24rpx;
   border-radius: 100rpx;
 }
@@ -86,12 +99,12 @@ page {
 }
 
 .tab-scroller {
-  padding: 8rpx 40rpx 32rpx;
+  padding: 8rpx 40rpx 8rpx;
 }
 
-.tab-nav {
+.tab-nav-light {
   position: relative;
-  background: rgba(255, 255, 255, 0.1);
+  background: #f1f5f9;
   height: 76rpx;
   border-radius: 20rpx;
   display: flex;
@@ -105,22 +118,23 @@ page {
   align-items: center;
   justify-content: center;
   font-size: 26rpx;
-  color: #94a3b8;
+  color: #64748b;
   z-index: 2;
   transition: all 0.3s;
 }
 
 .tab-item.active {
-  color: #ffffff;
+  color: #00BC7D;
   font-weight: 800;
 }
 
-.tab-active-bg {
+.tab-active-bg-light {
   position: absolute;
   top: 6rpx;
   bottom: 6rpx;
   width: 33.33%;
-  background: rgba(255, 255, 255, 0.15);
+  background: #ffffff;
+  box-shadow: 0 4rpx 12rpx rgba(0, 0, 0, 0.05);
   border-radius: 16rpx;
   transition: left 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   z-index: 1;
@@ -128,13 +142,13 @@ page {
 
 /* 2. Body (Flexible, Scrollable) */
 .app-body {
-  flex: 1; /* Take all remaining space */
-  height: 0; /* Crucial for some rendering engines to allow flex growth */
+  flex: 1;
+  height: 0;
   width: 100%;
 }
 
 .body-content {
-  padding: 32rpx;
+  padding: 32rpx 32rpx 120rpx;
   box-sizing: border-box;
 }
 
@@ -541,55 +555,66 @@ page {
 .sys-info { font-size: 18rpx; color: #e2e8f0; margin-top: 8rpx; text-transform: uppercase; }
 
 /* 3. Footer (Fixed Height, Non-scrollable) */
-.app-footer {
-  flex: none;
-  background: #ffffff;
+.tab-bar {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 100rpx;
+  background: rgba(255, 255, 255, 0.95);
+  box-shadow: 0 -1rpx 0 #F1F5F9;
   display: flex;
-  box-shadow: 0 -4rpx 30rpx rgba(0, 0, 0, 0.04);
-  z-index: 10;
-  border-top-left-radius: 40rpx;
-  border-top-right-radius: 40rpx;
-  padding: 20rpx 0 0;
+  justify-content: space-around;
+  align-items: center;
+  padding-bottom: env(safe-area-inset-bottom);
+  z-index: 100;
 }
 
-.nav-item {
-  flex: 1;
+.tab-item {
   display: flex;
   flex-direction: column;
   align-items: center;
-  justify-content: center;
-  padding-bottom: constant(safe-area-inset-bottom);
-  padding-bottom: env(safe-area-inset-bottom);
+  position: relative;
+  flex: 1;
 }
 
-.nav-ic-box {
-  width: 52rpx;
-  height: 52rpx;
-  margin-bottom: 6rpx;
+.tab-icon {
+  width: 48rpx;
+  height: 48rpx;
   display: flex;
   align-items: center;
   justify-content: center;
+  margin-bottom: 8rpx;
 }
 
-.nav-ic-box image {
-  width: 48rpx;
-  height: 48rpx;
-  opacity: 0.25;
+.tab-icon-img {
+  width: 38rpx;
+  height: 30rpx;
 }
 
-.nav-item text {
+.tab-text {
   font-size: 20rpx;
-  color: #94a3b8;
-  font-weight: 800;
+  font-family: Inter, sans-serif;
+  font-weight: 900;
+  color: #90A1B9;
 }
 
-.nav-item.active .nav-ic-box image {
-  opacity: 1;
-  filter: brightness(0.2);
+.tab-text-active {
+  color: #009966;
 }
 
-.nav-item.active text {
-  color: #0f172a;
+.tab-active {
+  position: relative;
+}
+
+.tab-active-bg {
+  position: absolute;
+  top: -48rpx;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 120rpx;
+  height: 120rpx;
+  z-index: -1;
 }
 
 .safe-area-bottom {
