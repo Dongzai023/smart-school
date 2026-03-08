@@ -470,9 +470,15 @@ def principal_get_dashboard(
     current_user: User = Depends(get_current_user)
 ):
     """校长端多维度签到看板"""
-    # 允许特定测试账号 xz001, xz002 访问，即使数据库中角色未更新
-    if current_user.role not in ["admin", "principal"] and current_user.username not in ["xz001", "xz002"]:
-        raise HTTPException(status_code=403, detail="无权访问")
+    # 允许特定测试账号访问，即使数据库中角色未更新
+    authorized_test_accounts = ["xz001", "xz002"]
+    is_authorized = (current_user.role in ["admin", "principal"]) or \
+                    (current_user.username in authorized_test_accounts) or \
+                    (getattr(current_user, "employee_id", "") in authorized_test_accounts)
+    
+    if not is_authorized:
+        print(f"DEBUG: Access denied for user: {current_user.username}, role: {current_user.role}")
+        raise HTTPException(status_code=403, detail=f"无权访问 (用户:{current_user.username})")
 
     if not checkin_date:
         checkin_date = date.today()
