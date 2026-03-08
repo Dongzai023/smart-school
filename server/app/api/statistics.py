@@ -462,12 +462,6 @@ def admin_get_user_records(
         "total": total
     }
 
-@router.get("/diag/users")
-def diag_users(db: Session = Depends(get_db)):
-    """Diagnostic endpoint to check test users."""
-    users = db.query(User).filter(User.username.in_(["xz001", "xz002"])).all()
-    return [{"id": u.id, "username": u.username, "role": u.role, "scope": u.view_scope, "is_hm": u.is_headmaster} for u in users]
-
 @router.get("/principal/dashboard")
 def principal_get_dashboard(
     period: str = Query("today", description="周期: session/today/week/month/semester"),
@@ -477,7 +471,7 @@ def principal_get_dashboard(
 ):
     """校长端多维度签到看板"""
     # 允许特定测试账号访问，即使数据库中角色未更新
-    authorized_test_accounts = ["xz001", "xz002", "T15229628942"]
+    authorized_test_accounts = ["xz01", "xz02", "xz001", "xz002", "T15229628942"]
     curr_name = str(current_user.username).strip().lower()
     curr_emp_id = str(current_user.employee_id).strip().lower() if getattr(current_user, 'employee_id', None) else ""
     
@@ -524,18 +518,19 @@ def principal_get_dashboard(
     curr_name = str(current_user.username).strip().lower()
     curr_emp_id = str(current_user.employee_id).strip().lower() if getattr(current_user, 'employee_id', None) else ""
     
-    is_xz001 = (curr_name == "xz001" or curr_emp_id == "xz001")
-    is_xz002 = (curr_name == "xz002" or curr_emp_id == "xz002")
+    # 兼容 xz01/xz001 和 xz02/xz002
+    is_xz01_variant = (curr_name in ["xz01", "xz001"] or curr_emp_id in ["xz01", "xz001"])
+    is_xz02_variant = (curr_name in ["xz02", "xz002"] or curr_emp_id in ["xz02", "xz002"])
     
     # 默认值
     dashboard_title = "清涧中学签到数据看板"
     force_headmaster_view = False
     
-    # 逻辑判断 (xz001 优先级最高，确保完全访问)
-    if is_xz001:
+    # 逻辑判断 (xz01/xz001 优先级最高，确保完全访问)
+    if is_xz01_variant:
         dashboard_title = "清涧中学签到数据看板"
         force_headmaster_view = False
-    elif is_xz002:
+    elif is_xz02_variant:
         dashboard_title = "清涧中学班主任签到数据看板"
         force_headmaster_view = True
     elif current_user.view_scope == "head_teacher" or current_user.role == "head_teacher":
@@ -646,8 +641,8 @@ def principal_get_dashboard(
             "employee_id": getattr(current_user, 'employee_id', 'N/A'),
             "role": current_user.role,
             "view_scope": current_user.view_scope,
-            "is_xz001": is_xz001,
-            "is_xz002": is_xz002,
+            "is_xz01": is_xz01_variant,
+            "is_xz02": is_xz02_variant,
             "force_headmaster": force_headmaster_view,
             "teacher_count": len(teachers)
         }
