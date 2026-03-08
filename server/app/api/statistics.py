@@ -470,26 +470,30 @@ def principal_get_dashboard(
     current_user: User = Depends(get_current_user)
 ):
     """校长端多维度签到看板"""
-    # 允许特定测试账号访问，即使数据库中角色未更新
-    authorized_test_accounts = ["xz01", "xz02", "xz001", "xz002", "T15229628942"]
+    # DEBUG LOGGING (Move to top to capture 403 cases)
+    try:
+        import os
+        log_path = os.path.join(settings.UPLOAD_DIR, "debug_user.log")
+        with open(log_path, "a") as f:
+            from datetime import datetime
+            f.write(f"{datetime.now()} - Dashboard Access - User: {current_user.username}, Role: {current_user.role}, Scope: {current_user.view_scope}, EmpID: {current_user.employee_id}\n")
+    except:
+        pass
+
+    # 允许特定测试账号访问
+    whitelisted = ["xz001", "xz002", "T15229628942"]
     curr_name = str(current_user.username).strip().lower()
     curr_emp_id = str(current_user.employee_id).strip().lower() if getattr(current_user, 'employee_id', None) else ""
     
-    is_test_account = (curr_name in authorized_test_accounts) or (curr_emp_id in authorized_test_accounts)
-    is_authorized = (current_user.role in ["admin", "principal"]) or is_test_account
+    is_test = (curr_name in whitelisted) or (curr_emp_id in whitelisted)
+    is_authorized = (current_user.role in ["admin", "principal"]) or is_test
     
     if not is_authorized:
-        raise HTTPException(status_code=403, detail="无权访问")
-
-    # DEBUG LOGGING
-    try:
-        import os
-        log_path = os.path.join("/app/uploads", "debug_user.log")
-        with open(log_path, "a") as f:
-            from datetime import datetime
-            f.write(f"{datetime.now()} - User: {current_user.username}, Role: {current_user.role}, Scope: {current_user.view_scope}, EmpID: {current_user.employee_id}\n")
-    except Exception as e:
-        print(f"Logging error: {e}")
+        # 更加宽松：如果是教育处等管理视角，也允许
+        if current_user.view_scope == "all" or current_user.role == "head_teacher":
+            is_authorized = True
+        else:
+            raise HTTPException(status_code=403, detail=f"无权访问 (Debug: {curr_name}/{current_user.role})")
 
     if not checkin_date:
         checkin_date = date.today()
