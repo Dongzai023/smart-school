@@ -512,24 +512,29 @@ def principal_get_dashboard(
         end_date = checkin_date
 
     # 1. 确定标题与权限范围
-    curr_name = str(current_user.username).lower()
-    curr_emp_id = str(current_user.employee_id).lower() if getattr(current_user, 'employee_id', None) else ""
+    curr_name = str(current_user.username).strip().lower()
+    curr_emp_id = str(current_user.employee_id).strip().lower() if getattr(current_user, 'employee_id', None) else ""
     
     is_xz001 = (curr_name == "xz001" or curr_emp_id == "xz001")
     is_xz002 = (curr_name == "xz002" or curr_emp_id == "xz002")
     
+    # 默认值
     dashboard_title = "清涧中学签到数据看板"
     force_headmaster_view = False
     
+    # 逻辑判断
     if is_xz002:
         dashboard_title = "清涧中学班主任签到数据看板"
         force_headmaster_view = True
-    elif current_user.view_scope == "head_teacher":
+    elif current_user.view_scope == "head_teacher" or current_user.role == "head_teacher":
         dashboard_title = "清涧中学班主任签到数据看板"
         force_headmaster_view = True
     elif is_xz001:
         dashboard_title = "清涧中学签到数据看板"
         force_headmaster_view = False
+    else:
+        # 其他教育处/管理员
+        dashboard_title = "清涧中学签到数据看板"
 
     # 2. 确定用户范围
     user_query = db.query(User).filter(User.is_active == True)

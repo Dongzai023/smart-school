@@ -129,7 +129,7 @@ Page({
                     },
                     sessionLabel: res.session_label || '',
                     dateRange: res.date_range || '',
-                    dashboardTitle: res.dashboard_title || '签到数据看板',
+                    dashboardTitle: res.dashboard_title || '清涧中学签到数据看板',
                     percentages: percentages,
                     badgeStatus: badgeStatus,
                     badgeText: badgeText,
