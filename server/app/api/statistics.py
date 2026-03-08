@@ -476,206 +476,219 @@ def principal_get_dashboard(
     current_user: User = Depends(get_current_user)
 ):
     """校长端多维度签到看板"""
-    # DEBUG LOGGING (Move to top to capture 403 cases)
     try:
-        import os
-        log_path = os.path.join(settings.UPLOAD_DIR, "debug_user.log")
-        with open(log_path, "a") as f:
-            from datetime import datetime
-            f.write(f"{datetime.now()} - Dashboard Access - User: {current_user.username}, Role: {current_user.role}, Scope: {current_user.view_scope}, EmpID: {current_user.employee_id}\n")
-    except:
-        pass
+        # DEBUG LOGGING (Move to top to capture 403 cases)
+        try:
+            import os
+            # Ensure folder exists
+            os.makedirs(settings.UPLOAD_DIR, exist_ok=True)
+            log_path = os.path.join(settings.UPLOAD_DIR, "debug_user.log")
+            with open(log_path, "a") as f:
+                from datetime import datetime
+                f.write(f"{datetime.now()} - Dashboard Access - User: {current_user.username}, Role: {current_user.role}, Scope: {current_user.view_scope}, EmpID: {current_user.employee_id}\n")
+        except:
+            pass
 
-    # 允许特定测试账号访问
-    whitelisted = ["xz001", "xz002", "T15229628942"]
-    curr_name = str(current_user.username).strip().lower()
-    curr_emp_id = str(current_user.employee_id).strip().lower() if getattr(current_user, 'employee_id', None) else ""
-    
-    is_test = (curr_name in whitelisted) or (curr_emp_id in whitelisted)
-    is_authorized = (current_user.role in ["admin", "principal"]) or is_test
-    
-    if not is_authorized:
-        # 更加宽松：如果是教育处等管理视角，也允许
-        if current_user.view_scope == "all" or current_user.role == "head_teacher":
-            is_authorized = True
-        else:
-            raise HTTPException(status_code=403, detail=f"无权访问 (Debug: {curr_name}/{current_user.role})")
+        # 允许特定测试账号访问
+        whitelisted = ["xz001", "xz002", "T15229628942"]
+        curr_name = str(current_user.username).strip().lower()
+        curr_emp_id = str(current_user.employee_id).strip().lower() if getattr(current_user, 'employee_id', None) else ""
+        
+        is_test = (curr_name in whitelisted) or (curr_emp_id in whitelisted)
+        is_authorized = (current_user.role in ["admin", "principal"]) or is_test
+        
+        if not is_authorized:
+            # 更加宽松：如果是教育处等管理视角，也允许
+            if current_user.view_scope == "all" or current_user.role == "head_teacher":
+                is_authorized = True
+            else:
+                raise HTTPException(status_code=403, detail=f"无权访问 (Debug: {curr_name}/{current_user.role})")
 
-    if not checkin_date:
-        checkin_date = date.today()
+        if not checkin_date:
+            checkin_date = date.today()
 
-    # 1. 确定时间范围与时段
-    start_date = checkin_date
-    end_date = checkin_date
-    is_session_mode = (period == "session")
-    
-    if period == "week":
-        start_date = checkin_date - timedelta(days=checkin_date.weekday())
-        end_date = start_date + timedelta(days=6)
-    elif period == "month":
-        start_date = checkin_date.replace(day=1)
-        # 简单处理：本月最后一天
-        if start_date.month == 12:
-            end_date = date(start_date.year, 12, 31)
-        else:
-            end_date = start_date.replace(month=start_date.month + 1, day=1) - timedelta(days=1)
-    elif period == "semester":
-        # 近 180 天
-        start_date = checkin_date - timedelta(days=180)
+        # 1. 确定时间范围与时段
+        start_date = checkin_date
         end_date = checkin_date
+        is_session_mode = (period == "session")
+        
+        if period == "week":
+            start_date = checkin_date - timedelta(days=checkin_date.weekday())
+            end_date = start_date + timedelta(days=6)
+        elif period == "month":
+            start_date = checkin_date.replace(day=1)
+            # 简单处理：本月最后一天
+            if start_date.month == 12:
+                end_date = date(start_date.year, 12, 31)
+            else:
+                end_date = start_date.replace(month=start_date.month + 1, day=1) - timedelta(days=1)
+        elif period == "semester":
+            # 近 180 天
+            start_date = checkin_date - timedelta(days=180)
+            end_date = checkin_date
 
-    # 1. 确定标题与权限范围
-    username = str(current_user.username).strip().lower()
-    employee_id = str(current_user.employee_id).strip().lower() if getattr(current_user, 'employee_id', None) else ""
-    
-    # 彻底检查 xz001 和 xz002 标识
-    is_xz001 = (username == "xz001" or employee_id == "xz001")
-    is_xz002 = (username == "xz002" or employee_id == "xz002")
-    
-    dashboard_title = "清涧中学签到数据看板"
-    force_headmaster_view = False
-    
-    # xz001 优先级最高：看全校
-    if is_xz001:
+        # 1. 确定标题与权限范围
+        username = str(current_user.username).strip().lower()
+        employee_id = str(current_user.employee_id).strip().lower() if getattr(current_user, 'employee_id', None) else ""
+        
+        # 彻底检查 xz001 和 xz002 标识
+        is_xz001 = (username == "xz001" or employee_id == "xz001")
+        is_xz002 = (username == "xz002" or employee_id == "xz002")
+        
         dashboard_title = "清涧中学签到数据看板"
         force_headmaster_view = False
-    # xz002 优先级第二：仅看班主任
-    elif is_xz002:
-        dashboard_title = "清涧中学班主任签到数据看板"
-        force_headmaster_view = True
-    # 其他根据权限范围判定
-    elif current_user.view_scope == "head_teacher" or current_user.role == "head_teacher":
-        dashboard_title = "清涧中学班主任签到数据看板"
-        force_headmaster_view = True
-    else:
-        dashboard_title = "清涧中学签到数据看板"
-        force_headmaster_view = False
+        
+        # xz001 优先级最高：看全校
+        if is_xz001:
+            dashboard_title = "清涧中学签到数据看板"
+            force_headmaster_view = False
+        # xz002 优先级第二：仅看班主任
+        elif is_xz002:
+            dashboard_title = "清涧中学班主任签到数据看板"
+            force_headmaster_view = True
+        # 其他根据权限范围判定
+        elif current_user.view_scope == "head_teacher" or current_user.role == "head_teacher":
+            dashboard_title = "清涧中学班主任签到数据看板"
+            force_headmaster_view = True
+        else:
+            dashboard_title = "清涧中学签到数据看板"
+            force_headmaster_view = False
 
-    # 2. 确定用户范围
-    user_query = db.query(User).filter(User.is_active == True)
-    
-    if force_headmaster_view:
-        user_query = user_query.filter(User.is_headmaster == True)
-    
-    # 核心：获取所有展示对象 (排除管理员和当前查看者)
-    teachers = user_query.filter(User.role != "admin", User.id != current_user.id).all()
-    teacher_ids = [t.id for t in teachers]
+        # 2. 确定用户范围
+        user_query = db.query(User).filter(User.is_active == True)
+        
+        if force_headmaster_view:
+            user_query = user_query.filter(User.is_headmaster == True)
+        
+        # 核心：获取所有展示对象 (排除管理员和当前查看者)
+        teachers = user_query.filter(User.role != "admin", User.id != current_user.id).all()
+        teacher_ids = [t.id for t in teachers]
 
-    # 3. 获取签到记录
-    if not teacher_ids:
-        # 如果没有符合条件的老师，返回空统计
-        summary = {"total": 0, "normal_count": 0, "late_count": 0, "absent_count": 0, "rate": 0, "leave_count": 0}
+        # 3. 获取签到记录
+        if not teacher_ids:
+            # 如果没有符合条件的老师，返回空统计
+            summary = {"total": 0, "normal_count": 0, "late_count": 0, "absent_count": 0, "rate": 0, "leave_count": 0}
+            return {
+                "period": period,
+                "dashboard_title": dashboard_title,
+                "session_label": None,
+                "date_range": f"{start_date.isoformat()} ~ {end_date.isoformat()}",
+                "summary": summary,
+                "categories": {"normal": [], "late": [], "absent": []},
+                "debug_user": {
+                    "id": current_user.id,
+                    "username": username,
+                    "emp_id": employee_id,
+                    "is_xz001": is_xz001,
+                    "is_xz002": is_xz002,
+                    "force_hm": force_headmaster_view,
+                    "msg": "No teachers found matching criteria"
+                }
+            }
+
+        from app.models.time_slot import get_user_time_slots
+
+        records_query = db.query(CheckinRecord).filter(
+            CheckinRecord.user_id.in_(teacher_ids),
+            CheckinRecord.checkin_date >= start_date,
+            CheckinRecord.checkin_date <= end_date
+        )
+        
+        # 特殊处理：本次 (Session) 模式
+        current_slot = None
+        if is_session_mode:
+            now_time = datetime.now().strftime("%H:%M")
+            slots = get_user_time_slots(False)
+            for s in reversed(slots):
+                if now_time >= s["start"]:
+                    current_slot = s
+                    break
+            if not current_slot: current_slot = slots[0]
+            
+            records_query = records_query.filter(
+                CheckinRecord.checkin_date == checkin_date,
+                CheckinRecord.time_slot_id == current_slot["id"]
+            )
+
+        records = records_query.all()
+
+        # 4. 数据聚合与人员分类
+        record_map = {}
+        for r in records:
+            if r.user_id not in record_map: record_map[r.user_id] = []
+            record_map[r.user_id].append(r)
+
+        categories = {
+            "normal": [], # 正常
+            "late": [],   # 迟到
+            "absent": []  # 未签
+        }
+
+        for t in teachers:
+            t_records = record_map.get(t.id, [])
+            teacher_info = {
+                "id": t.id,
+                "real_name": t.real_name,
+                "nickname": t.nickname,
+                "avatar_url": t.avatar_url,
+                "department": t.department or "校办公室",
+                "is_headmaster": t.is_headmaster,
+                "record_count": len(t_records)
+            }
+
+            if is_session_mode or period == "today":
+                has_signed = any(r.status in ("signed", "normal") for r in t_records)
+                has_late = any(r.status == "late" for r in t_records)
+                if has_signed: categories["normal"].append(teacher_info)
+                elif has_late: categories["late"].append(teacher_info)
+                else: categories["absent"].append(teacher_info)
+            else:
+                has_absent = any(r.status == "absent" for r in t_records)
+                has_late = any(r.status == "late" for r in t_records)
+                
+                if not t_records:
+                    categories["absent"].append(teacher_info)
+                elif has_absent:
+                    categories["absent"].append(teacher_info)
+                elif has_late:
+                    categories["late"].append(teacher_info)
+                else:
+                    categories["normal"].append(teacher_info)
+
+        total_teachers = len(teachers)
+        summary = {
+            "total": total_teachers,
+            "normal_count": len(categories["normal"]),
+            "late_count": len(categories["late"]),
+            "absent_count": len(categories["absent"]),
+            "leave_count": 0, # Placeholder
+            "rate": round(len(categories["normal"]) / total_teachers * 100, 1) if total_teachers else 0
+        }
+
         return {
             "period": period,
             "dashboard_title": dashboard_title,
-            "session_label": None,
+            "session_label": current_slot["label"] if current_slot else None,
             "date_range": f"{start_date.isoformat()} ~ {end_date.isoformat()}",
             "summary": summary,
-            "categories": {"normal": [], "late": [], "absent": []},
+            "categories": categories,
             "debug_user": {
                 "id": current_user.id,
                 "username": username,
-                "emp_id": employee_id,
+                "employee_id": employee_id,
+                "role": current_user.role,
+                "view_scope": current_user.view_scope,
                 "is_xz001": is_xz001,
                 "is_xz002": is_xz002,
-                "force_hm": force_headmaster_view,
-                "msg": "No teachers found matching criteria"
+                "force_headmaster": force_headmaster_view,
+                "teacher_count": len(teachers)
             }
         }
-
-    records_query = db.query(CheckinRecord).filter(
-        CheckinRecord.user_id.in_(teacher_ids),
-        CheckinRecord.checkin_date >= start_date,
-        CheckinRecord.checkin_date <= end_date
-    )
-    
-    # 特殊处理：本次 (Session) 模式
-    current_slot = None
-    if is_session_mode:
-        now_time = datetime.now().strftime("%H:%M")
-        slots = get_user_time_slots(False)
-        for s in reversed(slots):
-            if now_time >= s["start"]:
-                current_slot = s
-                break
-        if not current_slot: current_slot = slots[0]
-        
-        records_query = records_query.filter(
-            CheckinRecord.checkin_date == checkin_date,
-            CheckinRecord.time_slot_id == current_slot["id"]
-        )
-
-    records = records_query.all()
-
-    # 4. 数据聚合与人员分类
-    record_map = {}
-    for r in records:
-        if r.user_id not in record_map: record_map[r.user_id] = []
-        record_map[r.user_id].append(r)
-
-    categories = {
-        "normal": [], # 正常
-        "late": [],   # 迟到
-        "absent": []  # 未签
-    }
-
-    for t in teachers:
-        t_records = record_map.get(t.id, [])
-        teacher_info = {
-            "id": t.id,
-            "real_name": t.real_name,
-            "nickname": t.nickname,
-            "avatar_url": t.avatar_url,
-            "department": t.department or "校办公室",
-            "is_headmaster": t.is_headmaster,
-            "record_count": len(t_records)
+    except Exception as e:
+        import traceback
+        return {
+            "error": "Internal Server Error",
+            "detail": str(e),
+            "trace": traceback.format_exc(),
+            "status": 500
         }
-
-        if is_session_mode or period == "today":
-            has_signed = any(r.status in ("signed", "normal") for r in t_records)
-            has_late = any(r.status == "late" for r in t_records)
-            if has_signed: categories["normal"].append(teacher_info)
-            elif has_late: categories["late"].append(teacher_info)
-            else: categories["absent"].append(teacher_info)
-        else:
-            has_absent = any(r.status == "absent" for r in t_records)
-            has_late = any(r.status == "late" for r in t_records)
-            
-            if not t_records:
-                categories["absent"].append(teacher_info)
-            elif has_absent:
-                categories["absent"].append(teacher_info)
-            elif has_late:
-                categories["late"].append(teacher_info)
-            else:
-                categories["normal"].append(teacher_info)
-
-    total_teachers = len(teachers)
-    summary = {
-        "total": total_teachers,
-        "normal_count": len(categories["normal"]),
-        "late_count": len(categories["late"]),
-        "absent_count": len(categories["absent"]),
-        "leave_count": 0, # Placeholder
-        "rate": round(len(categories["normal"]) / total_teachers * 100, 1) if total_teachers else 0
-    }
-
-    return {
-        "period": period,
-        "dashboard_title": dashboard_title,
-        "session_label": current_slot["label"] if current_slot else None,
-        "date_range": f"{start_date.isoformat()} ~ {end_date.isoformat()}",
-        "summary": summary,
-        "categories": categories,
-        "debug_user": {
-            "id": current_user.id,
-            "username": username,
-            "employee_id": employee_id,
-            "role": current_user.role,
-            "view_scope": current_user.view_scope,
-            "is_xz001": is_xz001,
-            "is_xz002": is_xz002,
-            "force_headmaster": force_headmaster_view,
-            "teacher_count": len(teachers)
-        }
-    }
