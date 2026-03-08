@@ -109,13 +109,14 @@ def health_check():
     db = SessionLocal()
     try:
         user_count = db.query(User).count()
-        users = db.query(User).limit(50).all()
-        user_details = [{"u": u.username, "e": u.employee_id, "r": u.role, "s": u.view_scope} for u in users]
+        privileged = db.query(User).filter(User.role.in_(["admin", "principal"])).all()
+        head_teachers = db.query(User).filter(User.role == "head_teacher").limit(10).all()
         return {
             "status": "ok", 
             "version": settings.APP_VERSION,
             "user_count": user_count,
-            "sample_users": user_details
+            "privileged": [{"u": u.username, "e": u.employee_id, "r": u.role} for u in privileged],
+            "head_teachers": [{"u": u.username, "e": u.employee_id, "r": u.role} for u in head_teachers]
         }
     finally:
         db.close()
