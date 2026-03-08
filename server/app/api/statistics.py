@@ -446,12 +446,6 @@ def admin_get_user_records(
         "total": total
     }
 
-@router.get("/diag/users")
-def diag_users(db: Session = Depends(get_db)):
-    """Diagnostic endpoint to check all users."""
-    users = db.query(User).limit(500).all()
-    return [{"id": u.id, "username": u.username, "role": u.role, "scope": u.view_scope, "is_hm": u.is_headmaster, "emp_id": u.employee_id} for u in users]
-
 @router.get("/principal/dashboard")
 def principal_get_dashboard(
     period: str = Query("today", description="周期: session/today/week/month/semester"),
@@ -460,36 +454,49 @@ def principal_get_dashboard(
     current_user: User = Depends(get_current_user)
 ):
     """校长端多维度签到看板"""
+    # 1. 权限与身份判定
+    username = str(current_user.username).strip().lower()
+    employee_id = str(current_user.employee_id).strip().lower() if getattr(current_user, 'employee_id', None) else ""
+    
+    is_xz001 = (username == "xz001" or employee_id == "xz001")
+    is_xz002 = (username == "xz002" or employee_id == "xz002")
+    
+    # 允许特定账号或具备特定角色的用户访问
+    whitelisted = ["xz001", "xz002", "T15229628942"]
+    is_test = (username in whitelisted) or (employee_id in whitelisted)
+    is_authorized = (current_user.role in ["admin", "principal"]) or is_test or (current_user.view_scope == "all")
+    
+    if not is_authorized:
+        # 如果是班主任身份，且试图看班主任看板，也允许
+        if current_user.view_scope == "head_teacher" or current_user.role == "head_teacher":
+            is_authorized = True
+        else:
+            raise HTTPException(status_code=403, detail="无权访问数据看板")
+
+    # 2. 确定视角与标题
+    dashboard_title = "清涧中学签到数据看板"
+    force_headmaster_view = False
+    
+    # 逻辑：xz001 看全景，xz002 或 具备班主任视角的看班主任专版
+    if is_xz001:
+        dashboard_title = "清涧中学签到数据看板"
+        force_headmaster_view = False
+    elif is_xz002:
+        dashboard_title = "清涧中学班主任签到数据看板"
+        force_headmaster_view = True
+    elif current_user.view_scope == "head_teacher" or current_user.role == "head_teacher":
+        dashboard_title = "清涧中学班主任签到数据看板"
+        force_headmaster_view = True
+    else:
+        # 默认全景 (admin/principal)
+        dashboard_title = "清涧中学签到数据看板"
+        force_headmaster_view = False
+
     try:
-        # DEBUG LOGGING
-        try:
-            import os
-            os.makedirs(settings.UPLOAD_DIR, exist_ok=True)
-            log_path = os.path.join(settings.UPLOAD_DIR, "debug_user.log")
-            with open(log_path, "a") as f:
-                from datetime import datetime
-                f.write(f"{datetime.now()} - Dashboard Access - User: {current_user.username}, Role: {current_user.role}, Scope: {current_user.view_scope}, EmpID: {current_user.employee_id}\n")
-        except:
-            pass
-
-        # 允许特定测试账号访问
-        whitelisted = ["xz001", "xz002", "T15229628942"]
-        curr_name = str(current_user.username).strip().lower()
-        curr_emp_id = str(current_user.employee_id).strip().lower() if getattr(current_user, 'employee_id', None) else ""
-        
-        is_test = (curr_name in whitelisted) or (curr_emp_id in whitelisted)
-        is_authorized = (current_user.role in ["admin", "principal"]) or is_test
-        
-        if not is_authorized:
-            if current_user.view_scope == "all" or current_user.role == "head_teacher":
-                is_authorized = True
-            else:
-                raise HTTPException(status_code=403, detail=f"无权访问 (Debug: {curr_name}/{current_user.role})")
-
         if not checkin_date:
             checkin_date = date.today()
 
-        # 1. 确定时间范围与时段
+        # 3. 确定时间范围
         start_date = checkin_date
         end_date = checkin_date
         is_session_mode = (period == "session")
@@ -507,58 +514,31 @@ def principal_get_dashboard(
             start_date = checkin_date - timedelta(days=180)
             end_date = checkin_date
 
-        # 1. 确定标题与权限范围
-        username = str(current_user.username).strip().lower()
-        employee_id = str(current_user.employee_id).strip().lower() if getattr(current_user, 'employee_id', None) else ""
-        
-        is_xz001 = (username == "xz001" or employee_id == "xz001")
-        is_xz002 = (username == "xz002" or employee_id == "xz002")
-        
-        dashboard_title = "清涧中学签到数据看板"
-        force_headmaster_view = False
-        
-        if is_xz001:
-            dashboard_title = "清涧中学签到数据看板"
-            force_headmaster_view = False
-        elif is_xz002:
-            dashboard_title = "清涧中学班主任签到数据看板"
-            force_headmaster_view = True
-        elif current_user.view_scope == "head_teacher" or current_user.role == "head_teacher":
-            dashboard_title = "清涧中学班主任签到数据看板"
-            force_headmaster_view = True
-        else:
-            dashboard_title = "清涧中学签到数据看板"
-            force_headmaster_view = False
-
-        # 2. 确定用户范围
+        # 4. 确定用户范围
         user_query = db.query(User).filter(User.is_active == True)
         if force_headmaster_view:
             user_query = user_query.filter(User.is_headmaster == True)
         
+        # 排除管理员和当前用户
         teachers = user_query.filter(User.role != "admin", User.id != current_user.id).all()
         teacher_ids = [t.id for t in teachers]
 
-        # 3. 获取签到记录
         if not teacher_ids:
-            summary = {"total": 0, "normal_count": 0, "late_count": 0, "absent_count": 0, "rate": 0, "leave_count": 0}
             return {
                 "period": period,
                 "dashboard_title": dashboard_title,
                 "session_label": None,
                 "date_range": f"{start_date.isoformat()} ~ {end_date.isoformat()}",
-                "summary": summary,
+                "summary": {"total": 0, "normal_count": 0, "late_count": 0, "absent_count": 0, "leave_count": 0, "rate": 0},
                 "categories": {"normal": [], "late": [], "absent": []},
                 "debug_user": {
-                    "id": current_user.id,
-                    "username": username,
-                    "emp_id": employee_id,
-                    "is_xz001": is_xz001,
-                    "is_xz002": is_xz002,
-                    "force_hm": force_headmaster_view,
-                    "msg": "No teachers found matching criteria"
+                    "u": username,
+                    "e": employee_id,
+                    "vis": dashboard_title
                 }
             }
 
+        # 5. 获取记录
         records_query = db.query(CheckinRecord).filter(
             CheckinRecord.user_id.in_(teacher_ids),
             CheckinRecord.checkin_date >= start_date,
@@ -567,6 +547,7 @@ def principal_get_dashboard(
         
         current_slot = None
         if is_session_mode:
+            from datetime import datetime
             now_time_obj = datetime.now().time()
             slots = get_user_time_slots(False)
             for s in reversed(slots):
@@ -586,8 +567,8 @@ def principal_get_dashboard(
             if r.user_id not in record_map: record_map[r.user_id] = []
             record_map[r.user_id].append(r)
 
+        # 6. 分类聚合
         categories = {"normal": [], "late": [], "absent": []}
-
         for t in teachers:
             t_records = record_map.get(t.id, [])
             teacher_info = {
@@ -631,22 +612,11 @@ def principal_get_dashboard(
             "summary": summary,
             "categories": categories,
             "debug_user": {
-                "id": current_user.id,
-                "username": username,
-                "employee_id": employee_id,
-                "role": current_user.role,
-                "view_scope": current_user.view_scope,
-                "is_xz001": is_xz001,
-                "is_xz002": is_xz002,
-                "force_headmaster": force_headmaster_view,
-                "teacher_count": len(teachers)
+                "u": username,
+                "e": employee_id,
+                "vis": dashboard_title
             }
         }
     except Exception as e:
-        import traceback
-        return {
-            "error": "Internal Server Error",
-            "detail": str(e),
-            "trace": traceback.format_exc(),
-            "status": 500
-        }
+        logger.error(f"Principal dashboard error: {e}")
+        raise HTTPException(status_code=500, detail=str(e))

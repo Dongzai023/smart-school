@@ -106,20 +106,7 @@ def get_scheduler_jobs(admin: User = Depends(require_admin)):
 @app.get("/api/health")
 def health_check():
     """Health check endpoint."""
-    db = SessionLocal()
-    try:
-        user_count = db.query(User).count()
-        privileged = db.query(User).filter(User.role.in_(["admin", "principal"])).all()
-        head_teachers = db.query(User).filter(User.role == "head_teacher").limit(10).all()
-        return {
-            "status": "ok", 
-            "version": settings.APP_VERSION,
-            "user_count": user_count,
-            "privileged": [{"u": u.username, "e": u.employee_id, "r": u.role} for u in privileged],
-            "head_teachers": [{"u": u.username, "e": u.employee_id, "r": u.role} for u in head_teachers]
-        }
-    finally:
-        db.close()
+    return {"status": "ok", "app": settings.APP_NAME, "version": settings.APP_VERSION}
 
 
 def _ensure_admin_exists():
@@ -139,18 +126,51 @@ def _ensure_admin_exists():
     finally:
         db.close()
 def _ensure_principals_exist():
-    """Ensure principal accounts exist for management viewing. Removed xz01/xz02."""
+    """Ensure principal accounts exist for management viewing."""
     db = SessionLocal()
     try:
-        # Cleanup old accounts if they exist
+        # Cleanup old version accounts if they exist (xz01, xz02)
         for old_user in ["xz01", "xz02"]:
             user = db.query(User).filter(User.username == old_user).first()
             if user:
                 db.delete(user)
-                logger.info(f"Cleaned up old account: {old_user}")
+                logger.info(f"Cleaned up legacy account: {old_user}")
+        
+        # 1. xz001: 真正的校长/管理员视角 (Full Access)
+        principal = db.query(User).filter(User.username == "xz001").first()
+        if not principal:
+            principal = User(
+                username="xz001",
+                employee_id="xz001",
+                password_hash=hash_password("xz001@qjzx"),
+                real_name="校长(全量演示)",
+                role="principal", 
+                view_scope="all",
+                is_headmaster=False, # 关健：主校区视角
+                is_active=True
+            )
+            db.add(principal)
+            logger.info("Created account xz001 (Principal View)")
+
+        # 2. xz002: 班主任管理视角 (Headmaster Access)
+        headmaster = db.query(User).filter(User.username == "xz002").first()
+        if not headmaster:
+            headmaster = User(
+                username="xz002",
+                employee_id="xz002",
+                password_hash=hash_password("xz002@qjzx"),
+                real_name="校长(班主任专版)",
+                role="principal", # 角色也是校长，但视角不同
+                view_scope="head_teacher",
+                is_headmaster=True,
+                is_active=True
+            )
+            db.add(headmaster)
+            logger.info("Created account xz002 (Headmaster View)")
+
         db.commit()
     except Exception as e:
-        logger.error(f"Error cleaning up old accounts: {e}")
+        logger.error(f"Error ensuring principal accounts: {e}")
         db.rollback()
     finally:
         db.close()
