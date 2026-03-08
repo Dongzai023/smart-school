@@ -471,7 +471,7 @@ def principal_get_dashboard(
 ):
     """校长端多维度签到看板"""
     # 允许特定测试账号访问，即使数据库中角色未更新
-    authorized_test_accounts = ["xz001", "xz002"]
+    authorized_test_accounts = ["xz001", "xz002", "T15229628942"]
     is_authorized = (current_user.role in ["admin", "principal"]) or \
                     (current_user.username in authorized_test_accounts) or \
                     (getattr(current_user, "employee_id", "") in authorized_test_accounts)
