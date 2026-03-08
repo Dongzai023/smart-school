@@ -449,7 +449,8 @@ def admin_get_user_records(
 @router.get("/diag/users")
 def diag_users(db: Session = Depends(get_db)):
     """Diagnostic endpoint to check test users."""
-    users = db.query(User).filter(User.username.like("%xz%")).all()
+    from sqlalchemy import or_
+    users = db.query(User).filter(or_(User.username.like("%xz%"), User.employee_id.like("%xz%"))).all()
     return [{"id": u.id, "username": u.username, "role": u.role, "scope": u.view_scope, "is_hm": u.is_headmaster, "emp_id": u.employee_id} for u in users]
 
 @router.get("/principal/dashboard")
