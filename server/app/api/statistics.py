@@ -612,11 +612,19 @@ def principal_get_dashboard(
             "summary": summary,
             "categories": categories,
             "debug_user": {
-                "u": username,
-                "e": employee_id,
-                "vis": dashboard_title
+                "id": current_user.id,
+                "username": username,
+                "employee_id": employee_id,
+                "role": current_user.role,
+                "view_scope": current_user.view_scope,
+                "vis": dashboard_title,
+                "is_xz001": is_xz001,
+                "is_xz002": is_xz002,
+                "force_headmaster": force_headmaster_view,
+                "teacher_count": len(teachers)
             }
         }
     except Exception as e:
-        logger.error(f"Principal dashboard error: {e}")
-        raise HTTPException(status_code=500, detail=str(e))
+        import traceback
+        logger.error(f"Principal dashboard error: {traceback.format_exc()}")
+        raise HTTPException(status_code=500, detail=f"Server Error: {str(e)}")
