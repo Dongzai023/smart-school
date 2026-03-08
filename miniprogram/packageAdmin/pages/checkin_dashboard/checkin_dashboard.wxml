@@ -201,12 +201,14 @@
         </view>
     </view>
 
-    <!-- Debug Info (Visible only if user is xz001 or xz002) -->
-    <view style="font-size: 16rpx; color: #666; padding: 30rpx; background: #f0f0f0; border-top: 1rpx solid #ddd; margin-top: 20rpx;" wx:if="{{debugInfo}}">
-        <text style="display: block;">服务器识别身份: {{debugInfo.username}} (ID:{{debugInfo.id}})</text>
-        <text style="display: block;">角色: {{debugInfo.role}} | 范围: {{debugInfo.view_scope}}</text>
-        <text style="display: block;">判定结果: xz001:{{debugInfo.is_xz001}} | xz002:{{debugInfo.is_xz002}}</text>
-        <text style="display: block;">强制班主任视角: {{debugInfo.force_headmaster}} | 统计人数: {{debugInfo.teacher_count}}</text>
+    <!-- Page Footer -->
+    <view class="footer">
+        <image class="footer-icon" src="/assets/CodeBubbyAssets/2_509/1.svg" mode="aspectFit"></image>
+        <view class="footer-content">
+            <text class="footer-title">清涧中学 教师数字化管理平台</text>
+            <text class="footer-record">陕ICP备202506048号</text>
+            <text class="footer-copyright">版权所有 © 2024-2026 TD 数字科技。保留所有权利。</text>
+        </view>
     </view>
     <!-- Loading -->
     <view class="loading-mask" wx:if="{{loading}}">

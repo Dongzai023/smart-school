@@ -182,10 +182,16 @@ function doCheckin(timeSlotId, location = '清涧中学') {
 }
 
 /** 统计概览 */
-function getStatsOverview(period = 'week') {
-    const userInfo = getApp().globalData.userInfo || wx.getStorageSync('userInfo');
-    const userId = userInfo ? userInfo.id : 1;
-    return request(`${API.STATS_OVERVIEW}?period=${period}&user_id=${userId}`);
+function getStatsOverview(period = 'week', userId = null) {
+    const params = { period };
+    const parsedId = parseInt(userId);
+    if (userId && !isNaN(parsedId)) {
+        params.user_id = parsedId;
+    } else {
+        const userInfo = getApp().globalData.userInfo || wx.getStorageSync('userInfo');
+        params.user_id = userInfo ? userInfo.id : 1;
+    }
+    return request(API.STATS_OVERVIEW, 'GET', params);
 }
 
 /** 签到趋势 */
@@ -203,10 +209,16 @@ function getStatsTimeslot(period = 'week') {
 }
 
 /** 最近签到记录 */
-function getStatsRecords(limit = 10) {
-    const userInfo = getApp().globalData.userInfo || wx.getStorageSync('userInfo');
-    const userId = userInfo ? userInfo.id : 1;
-    return request(`${API.STATS_RECORDS}?limit=${limit}&user_id=${userId}`);
+function getStatsRecords(pageSize = 10, userId = null) {
+    const params = { page_size: pageSize };
+    const parsedId = parseInt(userId);
+    if (userId && !isNaN(parsedId)) {
+        params.user_id = parsedId;
+    } else {
+        const userInfo = getApp().globalData.userInfo || wx.getStorageSync('userInfo');
+        params.user_id = userInfo ? userInfo.id : 1;
+    }
+    return request(API.STATS_RECORDS, 'GET', params);
 }
 
 /** 成就勋章 */
@@ -224,10 +236,16 @@ function getActivities() {
 }
 
 /** 用户统计概要 */
-function getUserStats() {
-    const userInfo = getApp().globalData.userInfo || wx.getStorageSync('userInfo');
-    const userId = userInfo ? userInfo.id : 1;
-    return request(`${API.USER_ME_STATS}?user_id=${userId}`);
+function getUserStats(userId = null) {
+    const params = {};
+    const parsedId = parseInt(userId);
+    if (userId && !isNaN(parsedId)) {
+        params.user_id = parsedId;
+    } else {
+        const userInfo = getApp().globalData.userInfo || wx.getStorageSync('userInfo');
+        params.user_id = userInfo ? userInfo.id : 1;
+    }
+    return request(API.USER_ME_STATS, 'GET', params);
 }
 
 /** 提交请假申请 */

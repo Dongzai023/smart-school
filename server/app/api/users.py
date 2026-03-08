@@ -187,28 +187,49 @@ def get_activities(
 
 @router.get("/me/stats", response_model=UserStats)
 def get_user_stats(
+    user_id: Optional[int] = Query(None, description="目标用户ID (管理员权限)"),
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user)
 ):
     """获取用户统计"""
+    target_user = current_user
+    username = str(current_user.username).strip().lower()
+    employee_id = str(current_user.employee_id).strip().lower() if getattr(current_user, 'employee_id', None) else ""
+    whitelisted = ["xz001", "xz002", "t15229628942"]
+    
+    is_whitelisted = (username in whitelisted) or (employee_id in whitelisted)
+    is_mgmt = (current_user.role in ["admin", "principal"]) or (current_user.view_scope in ["all", "head_teacher"])
+    is_auth_for_all = is_whitelisted or is_mgmt
+    
+    if user_id and is_auth_for_all:
+        target_user = db.query(User).filter(User.id == user_id).first()
+        if not target_user:
+            raise HTTPException(status_code=404, detail="用户不存在")
+    elif user_id and user_id != current_user.id:
+        import logging
+        logging.getLogger(__name__).warning(f"get_user_stats: User {username} (ID: {current_user.id}) denied access to user ID {user_id}. auth_for_all={is_auth_for_all}")
+    
+    import logging
+    logging.getLogger(__name__).info(f"get_user_stats: current_user={username}, target_user={target_user.username if target_user else 'None'}")
+            
     # 全部签到统计
     total_checkins = db.query(CheckinRecord).filter(
-        CheckinRecord.user_id == current_user.id
+        CheckinRecord.user_id == target_user.id
     ).count()
     
     on_time_count = db.query(CheckinRecord).filter(
-        CheckinRecord.user_id == current_user.id,
+        CheckinRecord.user_id == target_user.id,
         CheckinRecord.status == "signed"
     ).count()
     
     late_count = db.query(CheckinRecord).filter(
-        CheckinRecord.user_id == current_user.id,
+        CheckinRecord.user_id == target_user.id,
         CheckinRecord.status == "late"
     ).count()
     
     # 待审批请假
     pending_leaves = db.query(Leave).filter(
-        Leave.user_id == current_user.id,
+        Leave.user_id == target_user.id,
         Leave.status == "pending"
     ).count()
 
@@ -221,13 +242,13 @@ def get_user_stats(
     # 该时段内应签到次数
     work_days = sum(1 for i in range((end_date - start_date).days + 1)
                    if (start_date + timedelta(days=i)).weekday() < 5)
-    is_headmaster = current_user.is_headmaster or current_user.role == "head_teacher"
+    is_headmaster = target_user.is_headmaster or target_user.role == "head_teacher"
     slot_count = len(get_user_time_slots(is_headmaster))
     expected = work_days * slot_count
     
     # 实际签到（正常+迟到）
     signed_in_period = db.query(CheckinRecord).filter(
-        CheckinRecord.user_id == current_user.id,
+        CheckinRecord.user_id == target_user.id,
         CheckinRecord.checkin_date >= start_date,
         CheckinRecord.checkin_date <= end_date,
         CheckinRecord.status.in_(["signed", "normal", "late"])
@@ -245,7 +266,7 @@ def get_user_stats(
     
     rank = 1
     for idx, r in enumerate(rank_query):
-        if r.user_id == current_user.id:
+        if r.user_id == target_user.id:
             rank = idx + 1
             break
             

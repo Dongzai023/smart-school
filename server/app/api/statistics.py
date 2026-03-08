@@ -13,6 +13,9 @@ from pydantic import BaseModel
 from app.config import settings
 from app.api.checkin import get_user_time_slots
 from typing import List, Optional
+import logging
+
+logger = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/statistics", tags=["统计"])
 
@@ -36,38 +39,74 @@ def _get_date_range(period: str):
 @router.get("/overview")
 def get_overview(
     period: str = Query("week", description="周期: week/month/semester"),
+    user_id: Optional[int] = Query(None, description="目标用户ID (管理员权限)"),
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user)
 ):
     """获取统计概览"""
-    start_date, end_date = _get_date_range(period)
+    target_user_id = current_user.id
+    username = str(current_user.username).strip().lower()
+    employee_id = str(current_user.employee_id).strip().lower() if getattr(current_user, 'employee_id', None) else ""
+    whitelisted = ["xz001", "xz002", "t15229628942"]
     
-    # 查询该时段内所有签到记录
+    is_whitelisted = (username in whitelisted) or (employee_id in whitelisted)
+    is_mgmt = (current_user.role in ["admin", "principal"]) or (current_user.view_scope in ["all", "head_teacher"])
+    is_auth_for_all = is_whitelisted or is_mgmt
+    
+    if user_id and is_auth_for_all:
+        target_user_id = user_id
+    elif user_id and user_id != current_user.id:
+        logger.warning(f"get_overview: User {username} (ID: {current_user.id}, scope: {current_user.view_scope}) denied access to user ID {user_id}. auth_for_all={is_auth_for_all}")
+        
+    logger.info(f"get_overview: current_user={username}, target_user_id={target_user_id}, period={period}")
+        
+    # 处理 session 周期，session 模式下我们看今天的数据
+    if period == "session":
+        start_date = date.today()
+        end_date = date.today()
+    else:
+        start_date, end_date = _get_date_range(period)
+    
+    # 1. 获取目标用户的身份来确定打卡时段数
+    target_user = current_user
+    if target_user_id != current_user.id:
+        target_user = db.query(User).filter(User.id == target_user_id).first() or current_user
+    
+    is_headmaster = target_user.is_headmaster or target_user.role == "head_teacher"
+    slots = get_user_time_slots(is_headmaster)
+    slot_count = len(slots)
+    
+    # 2. 查询该时段内所有签到记录
     records = db.query(CheckinRecord).filter(
-        CheckinRecord.user_id == current_user.id,
+        CheckinRecord.user_id == target_user_id,
         CheckinRecord.checkin_date >= start_date,
         CheckinRecord.checkin_date <= end_date
     ).all()
     
     signed_count = sum(1 for r in records if r.status in ("signed", "normal"))
     late_count = sum(1 for r in records if r.status == "late")
-    absent_count = sum(1 for r in records if r.status == "absent")
-    total = len(records)
     
-    # 出勤率：(正常+迟到) / 总记录
-    # 如果没有记录，基于工作日 * 时段数估算总应签次数
-    if total > 0:
-        attendance_rate = round(signed_count / total * 100, 1)
+    # 3. 计算应签到次数并推算缺勤
+    if period == "session":
+        # 如果是 session 模式，应签到次数取决于当前已经过去的时段
+        now_time = datetime.now().time()
+        now_minutes = now_time.hour * 60 + now_time.minute
+        expected_total = sum(1 for s in slots if (s["start"].hour * 60 + s["start"].minute) <= now_minutes)
     else:
-        # 估算：工作日天数 * 4 个时段
+        # 工作日天数 * 时段数
         work_days = sum(1 for i in range((end_date - start_date).days + 1)
                        if (start_date + timedelta(days=i)).weekday() < 5)
-        is_headmaster = current_user.is_headmaster or current_user.role == "head_teacher"
-        slot_count = len(get_user_time_slots(is_headmaster))
-        estimated_total = work_days * slot_count
-        attendance_rate = round(signed_count / estimated_total * 100, 1) if estimated_total > 0 else 0
+        expected_total = work_days * slot_count
+        
+    # 计算缺勤（核心修复：absent 不一定存在于 DB 中）
+    absent_count = max(0, expected_total - signed_count - late_count)
     
-    # 全校排名
+    # 出勤率：(正常+迟到) / 总应签
+    attendance_rate = 0
+    if expected_total > 0:
+        attendance_rate = round((signed_count + late_count) / expected_total * 100, 1)
+    
+    # 全校排名 (基于目标点位)
     rank_query = db.query(
         CheckinRecord.user_id,
         func.count(CheckinRecord.id).label("cnt")
@@ -83,7 +122,7 @@ def get_overview(
     
     school_rank = 1
     for idx, r in enumerate(rank_query):
-        if r.user_id == current_user.id:
+        if r.user_id == target_user_id:
             school_rank = idx + 1
             break
     
@@ -98,10 +137,11 @@ def get_overview(
         rank_label = "一般"
     
     return {
-        "attendance_rate": attendance_rate,
+        "attendance_rate": min(100.0, attendance_rate),
         "signed_count": signed_count,
         "late_count": late_count,
         "absent_count": absent_count,
+        "total_count": expected_total,
         "school_rank": school_rank,
         "rank_label": rank_label
     }
@@ -213,18 +253,35 @@ def get_timeslot_stats(
 def get_records(
     page: int = Query(1, ge=1, description="页码"),
     page_size: int = Query(10, ge=1, le=50, description="每页条数"),
+    user_id: Optional[int] = Query(None, description="目标用户ID (管理员权限)"),
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user)
 ):
     """获取最近签到记录，按日期分组"""
-    is_headmaster = current_user.is_headmaster or current_user.role == "head_teacher"
-    slot_count = len(get_user_time_slots(is_headmaster))
+    target_user_id = current_user.id
+    username = str(current_user.username).strip().lower()
+    employee_id = str(current_user.employee_id).strip().lower() if getattr(current_user, 'employee_id', None) else ""
+    whitelisted = ["xz001", "xz002", "t15229628942"]
+    
+    is_whitelisted = (username in whitelisted) or (employee_id in whitelisted)
+    is_mgmt = (current_user.role in ["admin", "principal"]) or (current_user.view_scope in ["all", "head_teacher"])
+    is_auth_for_all = is_whitelisted or is_mgmt
+    
+    if user_id and is_auth_for_all:
+        target_user_id = user_id
+    elif user_id and user_id != current_user.id:
+        logger.warning(f"get_records: User {username} (ID: {current_user.id}) denied access to user ID {user_id}. auth_for_all={is_auth_for_all}")
+    
+    logger.info(f"get_records: current_user={username}, target_user_id={target_user_id}, page={page}")
+    
+    # 注意：slot_count 逻辑依赖于目标用户身份，但为简化，目前校长端和老师端差异主要在展示
+    # 这里的 slot_count 实际用于前端逻辑，后端仅返回记录
     
     # 查询有签到记录的日期
     dates_query = db.query(
         func.distinct(CheckinRecord.checkin_date)
     ).filter(
-        CheckinRecord.user_id == current_user.id
+        CheckinRecord.user_id == target_user_id
     ).order_by(
         CheckinRecord.checkin_date.desc()
     ).offset((page - 1) * page_size).limit(page_size).all()
@@ -232,7 +289,7 @@ def get_records(
     total = db.query(
         func.count(func.distinct(CheckinRecord.checkin_date))
     ).filter(
-        CheckinRecord.user_id == current_user.id
+        CheckinRecord.user_id == target_user_id
     ).scalar() or 0
     
     weekday_names = ['星期一', '星期二', '星期三', '星期四', '星期五', '星期六', '星期日']
@@ -241,7 +298,7 @@ def get_records(
     records = []
     for (d,) in dates_query:
         day_records = db.query(CheckinRecord).filter(
-            CheckinRecord.user_id == current_user.id,
+            CheckinRecord.user_id == target_user_id,
             CheckinRecord.checkin_date == d
         ).all()
         
