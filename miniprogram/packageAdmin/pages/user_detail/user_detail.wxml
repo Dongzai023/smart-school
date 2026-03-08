@@ -1,0 +1,86 @@
+<view class="page-container">
+  <!-- User Profile Header -->
+  <view class="profile-header">
+    <view class="ph-bg"></view>
+    <view class="ph-content">
+      <view class="phc-avatar-wrap">
+        <image class="phc-avatar" src="{{user.display_avatar}}" mode="aspectFill"></image>
+        <view class="phc-status {{user.statusClass}}"></view>
+      </view>
+      <view class="phc-info">
+        <text class="phc-name">{{user.name}}</text>
+        <view class="phc-dept">
+          <text class="phcd-icon">👥</text>
+          <text class="phcd-text">{{user.department}}</text>
+        </view>
+      </view>
+    </view>
+  </view>
+
+  <!-- Stats Summary -->
+  <view class="stats-summary">
+    <view class="ss-item">
+      <text class="ssi-value">{{stats.total}}</text>
+      <text class="ssi-label">总打卡</text>
+    </view>
+    <view class="ss-divider"></view>
+    <view class="ss-item">
+      <text class="ssi-value success">{{stats.normal}}</text>
+      <text class="ssi-label">正常</text>
+    </view>
+    <view class="ss-divider"></view>
+    <view class="ss-item">
+      <text class="ssi-value warning">{{stats.late}}</text>
+      <text class="ssi-label">迟到</text>
+    </view>
+    <view class="ss-divider"></view>
+    <view class="ss-item">
+      <text class="ssi-value danger">{{stats.absent}}</text>
+      <text class="ssi-label">缺勤</text>
+    </view>
+  </view>
+
+  <!-- Records List -->
+  <view class="records-section">
+    <view class="rs-header">
+      <text class="rsh-title">考勤记录</text>
+      <text class="rsh-period">{{periodLabel}}</text>
+    </view>
+
+    <view class="rs-list">
+      <view class="record-item" wx:for="{{records}}" wx:key="id">
+        <view class="ri-left">
+          <view class="ril-date">
+            <text class="ril-day">{{item.day}}</text>
+            <text class="ril-month">{{item.month}}</text>
+          </view>
+        </view>
+
+        <view class="ri-center">
+          <view class="ric-line">
+            <view class="ric-dot {{item.statusClass}}"></view>
+          </view>
+        </view>
+
+        <view class="ri-right">
+          <view class="rir-card">
+            <view class="rirc-top">
+              <text class="rirc-time">{{item.time}}</text>
+              <view class="rirc-status {{item.statusClass}}">{{item.statusText}}</view>
+            </view>
+            <view class="rirc-bottom" wx:if="{{item.location}}">
+              <text class="rircb-icon">📍</text>
+              <text class="rircb-location">{{item.location}}</text>
+            </view>
+          </view>
+        </view>
+      </view>
+
+      <!-- Empty State -->
+      <view class="empty-state" wx:if="{{records.length === 0}}">
+        <view class="es-icon">📋</view>
+        <text class="es-text">该时段暂无考勤记录</text>
+      </view>
+    </view>
+  </view>
+</view>

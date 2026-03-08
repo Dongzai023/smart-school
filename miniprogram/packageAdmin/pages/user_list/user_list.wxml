@@ -1,0 +1,57 @@
+<view class="page-container">
+  <!-- Stats Summary Bar -->
+  <view class="stats-bar">
+    <view class="sb-item">
+      <text class="sb-value">{{filteredUsers.length}}</text>
+      <text class="sb-label">{{categoryLabel}}</text>
+    </view>
+    <view class="sb-divider"></view>
+    <view class="sb-icon-wrap {{type}}">
+      <text class="sb-icon">📊</text>
+    </view>
+  </view>
+
+  <!-- User List -->
+  <scroll-view scroll-y class="list-scroll" 
+    refresher-enabled 
+    bindrefresherrefresh="onRefresh" 
+    refresher-triggered="{{refreshing}}">
+    
+    <view class="list-content">
+      <view class="user-card" 
+        wx:for="{{filteredUsers}}" 
+        wx:key="id" 
+        bindtap="goToUserDetail" 
+        data-user="{{item}}">
+        
+        <view class="uc-left">
+          <view class="ucl-avatar-wrap">
+            <image class="ucl-avatar" src="{{item.display_avatar}}" mode="aspectFill"></image>
+            <view class="ucl-status {{item.statusClass}}"></view>
+          </view>
+        </view>
+
+        <view class="uc-center">
+          <view class="ucc-top">
+            <text class="ucc-name">{{item.real_name}}</text>
+            <view class="ucc-tag {{item.statusClass}}">{{item.statusText}}</view>
+          </view>
+          <text class="ucc-dept">{{item.department}}</text>
+        </view>
+
+        <view class="uc-right">
+          <view class="ucr-arrow">
+            <text>›</text>
+          </view>
+        </view>
+      </view>
+
+      <!-- Empty State -->
+      <view class="empty-state" wx:if="{{filteredUsers.length === 0}}">
+        <view class="es-icon">📋</view>
+        <text class="es-text">暂无人员记录</text>
+        <text class="es-hint">下拉刷新获取最新数据</text>
+      </view>
+    </view>
+  </scroll-view>
+</view>

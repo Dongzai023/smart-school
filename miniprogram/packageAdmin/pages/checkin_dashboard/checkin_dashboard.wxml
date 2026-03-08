@@ -1,30 +1,42 @@
 <view class="container">
     <!-- Header Section -->
-    <view class="page-header">
-        <view class="ph-content">
-            <view class="ph-top">
-                <view class="pht-left">
-                    <text class="ph-title">清涧中学</text>
-                    <text class="ph-subtitle">智慧考勤看板</text>
-                </view>
-                <view class="pht-right">
-                    <text class="ph-icon">📊</text>
-                </view>
-            </view>
-        </view>
+    <view class="page-header-v3">
+                <view class="ph-floating-card">
+                    <!-- Mesh Gradient Decoration -->
+                    <view class="mesh-bg">
+                        <view class="mesh-dot mesh-dot-1"></view>
+                        <view class="mesh-dot mesh-dot-2"></view>
+                        <view class="mesh-dot mesh-dot-3"></view>
+                    </view>
 
-        <!-- Tab Navigation -->
-        <view class="tab-wrapper">
-            <scroll-view class="tab-scroll" scroll-x>
-                <view class="tab-list">
-                    <view wx:for="{{periods}}" wx:key="id"
-                          class="tab-item {{activePeriod === item.id ? 'active' : ''}}"
-                          bindtap="onPeriodChange" data-period="{{item.id}}">
-                        {{item.label}}
+                    <view class="ph-content">
+                        <view class="ph-top">
+                            <view class="pht-left" bindtap="goToUserList" data-type="all">
+                                <text class="pht-label">{{totalLabel}}</text>
+                                <view class="pht-value-row">
+                                    <text class="pht-value">{{summary.total}}</text>
+                                    <text class="pht-unit">人</text>
+                                </view>
+                            </view>
+                            <view class="pht-right">
+                                <view class="ph-icon-box">
+                                    <image class="ph-icon-img" src="../../../assets/icons/v3_icon.png" mode="aspectFit"></image>
+                                </view>
+                            </view>
+                        </view>
+                    </view>
+
+                    <!-- Tab Navigation (Segmented style) -->
+                    <view class="tab-wrapper-v3">
+                        <view class="tab-list">
+                            <view wx:for="{{periods}}" wx:key="id"
+                                  class="tab-item-v3 {{activePeriod === item.id ? 'active' : ''}}"
+                                  bindtap="onPeriodChange" data-period="{{item.id}}">
+                                {{item.label}}
+                            </view>
+                        </view>
                     </view>
                 </view>
-            </scroll-view>
-        </view>
     </view>
 
     <!-- Main Content -->
@@ -54,17 +66,17 @@
                 </view>
 
                 <view class="ocb-stats">
-                    <view class="ocbs-item">
+                    <view class="ocbs-item" bindtap="goToUserList" data-type="late">
                         <text class="ocbsi-label">迟到</text>
                         <text class="ocbsi-value">{{summary.late_count}}</text>
                     </view>
                     <view class="ocbs-divider"></view>
-                    <view class="ocbs-item">
+                    <view class="ocbs-item" bindtap="goToUserList" data-type="absent">
                         <text class="ocbsi-label">缺勤</text>
                         <text class="ocbsi-value">{{summary.absent_count}}</text>
                     </view>
                     <view class="ocbs-divider"></view>
-                    <view class="ocbs-item">
+                    <view class="ocbs-item" bindtap="goToUserList" data-type="leave">
                         <text class="ocbsi-label">请假</text>
                         <text class="ocbsi-value">{{summary.leave_count || 0}}</text>
                     </view>
@@ -74,51 +86,67 @@
 
         <!-- Stats Grid -->
         <view class="stats-section">
-            <view class="ss-card">
-                <view class="ssc-icon green">✓</view>
-                <view class="ssc-info">
+            <view class="ss-card-v3" bindtap="goToUserList" data-type="normal">
+                <view class="ssc-left">
+                    <view class="ssc-icon-v3 green">✓</view>
+                </view>
+                <view class="ssc-right">
                     <text class="ssci-label">正常签到</text>
-                    <text class="ssci-value">{{summary.normal_count}}</text>
-                    <text class="ssci-percent">{{percentages.normal}}%</text>
-                </view>
-                <view class="ssc-progress">
-                    <view class="sscp-bar" style="width: {{percentages.normal}}%;"></view>
+                    <view class="ssci-main">
+                        <text class="ssci-value">{{summary.normal_count}}</text>
+                        <text class="ssci-percent">{{percentages.normal}}%</text>
+                    </view>
+                    <view class="ssc-progress-v3">
+                        <view class="sscp-bar-v3" style="width: {{percentages.normal}}%;"></view>
+                    </view>
                 </view>
             </view>
 
-            <view class="ss-card">
-                <view class="ssc-icon orange">⚠</view>
-                <view class="ssc-info">
+            <view class="ss-card-v3" bindtap="goToUserList" data-type="late">
+                <view class="ssc-left">
+                    <view class="ssc-icon-v3 orange">⚠</view>
+                </view>
+                <view class="ssc-right">
                     <text class="ssci-label">迟到人数</text>
-                    <text class="ssci-value">{{summary.late_count}}</text>
-                    <text class="ssci-percent">{{percentages.late}}%</text>
-                </view>
-                <view class="ssc-progress">
-                    <view class="sscp-bar orange" style="width: {{percentages.late}}%;"></view>
+                    <view class="ssci-main">
+                        <text class="ssci-value">{{summary.late_count}}</text>
+                        <text class="ssci-percent">{{percentages.late}}%</text>
+                    </view>
+                    <view class="ssc-progress-v3">
+                        <view class="sscp-bar-v3 orange" style="width: {{percentages.late}}%;"></view>
+                    </view>
                 </view>
             </view>
 
-            <view class="ss-card">
-                <view class="ssc-icon red">✗</view>
-                <view class="ssc-info">
+            <view class="ss-card-v3" bindtap="goToUserList" data-type="absent">
+                <view class="ssc-left">
+                    <view class="ssc-icon-v3 red">✗</view>
+                </view>
+                <view class="ssc-right">
                     <text class="ssci-label">缺勤预警</text>
-                    <text class="ssci-value">{{summary.absent_count}}</text>
-                    <text class="ssci-percent">{{percentages.absent}}%</text>
-                </view>
-                <view class="ssc-progress">
-                    <view class="sscp-bar red" style="width: {{percentages.absent}}%;"></view>
+                    <view class="ssci-main">
+                        <text class="ssci-value">{{summary.absent_count}}</text>
+                        <text class="ssci-percent">{{percentages.absent}}%</text>
+                    </view>
+                    <view class="ssc-progress-v3">
+                        <view class="sscp-bar-v3 red" style="width: {{percentages.absent}}%;"></view>
+                    </view>
                 </view>
             </view>
 
-            <view class="ss-card">
-                <view class="ssc-icon purple">🏠</view>
-                <view class="ssc-info">
-                    <text class="ssci-label">请假审批</text>
-                    <text class="ssci-value">{{summary.leave_count || 0}}</text>
-                    <text class="ssci-percent">{{percentages.leave}}%</text>
+            <view class="ss-card-v3" bindtap="goToUserList" data-type="leave">
+                <view class="ssc-left">
+                    <view class="ssc-icon-v3 purple">🏠</view>
                 </view>
-                <view class="ssc-progress">
-                    <view class="sscp-bar purple" style="width: {{percentages.leave}}%;"></view>
+                <view class="ssc-right">
+                    <text class="ssci-label">请假审批</text>
+                    <view class="ssci-main">
+                        <text class="ssci-value">{{summary.leave_count || 0}}</text>
+                        <text class="ssci-percent">{{percentages.leave}}%</text>
+                    </view>
+                    <view class="ssc-progress-v3">
+                        <view class="sscp-bar-v3 purple" style="width: {{percentages.leave}}%;"></view>
+                    </view>
                 </view>
             </view>
         </view>

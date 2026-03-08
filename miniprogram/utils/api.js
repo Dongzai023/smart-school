@@ -259,5 +259,7 @@ module.exports = {
     applyLeave,
     getLeaveList,
     getPrincipalCheckin: (params) => request(API.STATS_PRINCIPAL, 'GET', params),
-    getPrincipalDashboard: (params) => request('/api/statistics/principal/dashboard', 'GET', params),
+    getPrincipalDashboard: (params) => {
+        return request('/api/statistics/principal/dashboard', 'GET', params);
+    },
 };

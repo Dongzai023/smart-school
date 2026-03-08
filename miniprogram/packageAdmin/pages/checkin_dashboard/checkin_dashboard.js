@@ -39,10 +39,17 @@ Page({
         },
         badgeStatus: 'warning',
         badgeText: '需关注',
-        baseUrl: api.BASE_URL
+        baseUrl: api.BASE_URL,
+        totalLabel: '当前应到人数'
     },
 
     onLoad: function () {
+        const userInfo = wx.getStorageSync('userInfo');
+        if (userInfo && userInfo.employeeId === 'xz002') {
+            this.setData({
+                totalLabel: '当前班主任总数'
+            });
+        }
         this.fetchData();
     },
 
@@ -147,5 +154,12 @@ Page({
             .finally(() => {
                 this.setData({ loading: false });
             });
+    },
+
+    goToUserList: function (e) {
+        const type = e.currentTarget.dataset.type;
+        wx.navigateTo({
+            url: `../user_list/user_list?type=${type}&period=${this.data.activePeriod}`
+        });
     }
 });

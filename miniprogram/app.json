@@ -4,8 +4,17 @@
     "pages/index/index",
     "pages/statistics/statistics",
     "pages/profile/profile",
-    "pages/leave-application/leave-application",
-    "pages/admin/checkin_dashboard/checkin_dashboard"
+    "pages/leave-application/leave-application"
+  ],
+  "subpackages": [
+    {
+      "root": "packageAdmin",
+      "pages": [
+        "pages/checkin_dashboard/checkin_dashboard",
+        "pages/user_list/user_list",
+        "pages/user_detail/user_detail"
+      ]
+    }
   ],
   "window": {
     "backgroundTextStyle": "light",
