@@ -61,11 +61,26 @@ Page({
                 rawList = res.categories[this.data.type] || [];
             }
 
-            const users = rawList.map(u => ({
-                ...u,
-                statusText: this.getStatusText(u),
-                statusClass: this.data.type === 'all' ? 'normal' : this.data.type
-            }));
+            const users = rawList.map(u => {
+                let avatar = u.avatar_url || u.avatar;
+                let display_avatar = '/assets/CodeBubbyAssets/2_423/5.svg';
+
+                if (avatar && typeof avatar === 'string') {
+                    if (avatar.startsWith('http')) {
+                        display_avatar = avatar;
+                    } else {
+                        const normalizedPath = avatar.startsWith('/') ? avatar : '/' + avatar;
+                        display_avatar = api.BASE_URL + normalizedPath;
+                    }
+                }
+
+                return {
+                    ...u,
+                    display_avatar,
+                    statusText: this.getStatusText(u),
+                    statusClass: this.data.type === 'all' ? 'normal' : this.data.type
+                };
+            });
 
             this.setData({ users }, () => this.filterUsers());
             if (cb) cb();
@@ -105,7 +120,7 @@ Page({
     goToUserDetail(e) {
         const { user } = e.currentTarget.dataset;
         wx.navigateTo({
-            url: `../user_detail/user_detail?userId=${user.id}&name=${user.real_name}&period=${this.data.period}&department=${user.department}`
+            url: `../user_detail/user_detail?userId=${user.id}&name=${user.real_name}&period=${this.data.period}&department=${user.department}&avatar=${encodeURIComponent(user.display_avatar)}`
         });
     }
 });

@@ -21,7 +21,7 @@ Page({
     },
 
     onLoad(options) {
-        const { userId, name, period, department } = options;
+        const { userId, name, period, department, avatar } = options;
         const periods = {
             'session': '本次时段',
             'today': '今日',
@@ -33,6 +33,7 @@ Page({
             userId,
             'user.name': name || '未知老师',
             'user.department': department || '教师',
+            'user.display_avatar': avatar ? decodeURIComponent(avatar) : '/assets/CodeBubbyAssets/2_423/5.svg',
             period: period || 'session',
             periodLabel: periods[period] || '时段'
         });
