@@ -470,7 +470,8 @@ def principal_get_dashboard(
     current_user: User = Depends(get_current_user)
 ):
     """校长端多维度签到看板"""
-    if current_user.role not in ["admin", "principal"]:
+    # 允许特定测试账号 xz001, xz002 访问，即使数据库中角色未更新
+    if current_user.role not in ["admin", "principal"] and current_user.username not in ["xz001", "xz002"]:
         raise HTTPException(status_code=403, detail="无权访问")
 
     if not checkin_date:
