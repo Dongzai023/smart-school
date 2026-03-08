@@ -10,6 +10,8 @@ from app.models.user import User
 from app.models.checkin_record import CheckinRecord
 from app.services.auth_service import get_current_user, require_admin, hash_password
 from pydantic import BaseModel
+from app.config import settings
+from app.api.checkin import get_user_time_slots
 from typing import List, Optional
 
 router = APIRouter(prefix="/statistics", tags=["统计"])
@@ -29,24 +31,6 @@ def _get_date_range(period: str):
     else:
         start = today - timedelta(days=7)
     return start, today
-
-
-def get_user_time_slots(is_headmaster: bool = False):
-    """获取用户对应的时间段配置"""
-    if is_headmaster:
-        return [
-            {"id": 1, "label": "早自习", "start": "06:20", "normal_end": "07:30", "late_end": "09:20"},
-            {"id": 2, "label": "下午", "start": "13:30", "normal_end": "14:10", "late_end": "15:10"},
-            {"id": 3, "label": "傍晚", "start": "16:30", "normal_end": "17:40", "late_end": "18:00"},
-            {"id": 4, "label": "晚自习", "start": "18:00", "normal_end": "19:20", "late_end": "19:20"},
-        ]
-    else:
-        return [
-            {"id": 1, "label": "上午", "start": "07:30", "normal_end": "08:10", "late_end": "10:10"},
-            {"id": 2, "label": "中午", "start": "10:40", "normal_end": "12:00", "late_end": "12:00"},
-            {"id": 3, "label": "下午", "start": "13:30", "normal_end": "14:10", "late_end": "16:00"},
-            {"id": 4, "label": "晚自习", "start": "16:30", "normal_end": "17:30", "late_end": "17:30"},
-        ]
 
 
 @router.get("/overview")
@@ -584,8 +568,6 @@ def principal_get_dashboard(
                 "msg": "No teachers found matching criteria"
             }
         }
-
-    from app.api.checkin import get_user_time_slots
 
     records_query = db.query(CheckinRecord).filter(
         CheckinRecord.user_id.in_(teacher_ids),
