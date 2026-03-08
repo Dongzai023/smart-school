@@ -503,7 +503,10 @@ def principal_get_dashboard(
 
     # 2. 确定用户范围
     user_query = db.query(User).filter(User.is_active == True)
-    if current_user.view_scope == "head_teacher":
+    # 针对 xz002 特殊处理：强制仅能查看班主任数据
+    if str(current_user.username) == "xz002":
+        user_query = user_query.filter(User.is_headmaster == True)
+    elif current_user.view_scope == "head_teacher":
         user_query = user_query.filter(User.is_headmaster == True)
     
     # 排除管理员和校长自身，看老师和班主任
