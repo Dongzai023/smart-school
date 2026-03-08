@@ -478,6 +478,16 @@ def principal_get_dashboard(
     if not is_authorized:
         raise HTTPException(status_code=403, detail="无权访问")
 
+    # DEBUG LOGGING
+    try:
+        import os
+        log_path = os.path.join("/app/uploads", "debug_user.log")
+        with open(log_path, "a") as f:
+            from datetime import datetime
+            f.write(f"{datetime.now()} - User: {current_user.username}, Role: {current_user.role}, Scope: {current_user.view_scope}, EmpID: {current_user.employee_id}\n")
+    except Exception as e:
+        print(f"Logging error: {e}")
+
     if not checkin_date:
         checkin_date = date.today()
 
