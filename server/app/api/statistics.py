@@ -462,6 +462,12 @@ def admin_get_user_records(
         "total": total
     }
 
+@router.get("/diag/users")
+def diag_users(db: Session = Depends(get_db)):
+    """Diagnostic endpoint to check test users."""
+    users = db.query(User).filter(User.username.in_(["xz001", "xz002"])).all()
+    return [{"id": u.id, "username": u.username, "role": u.role, "scope": u.view_scope, "is_hm": u.is_headmaster} for u in users]
+
 @router.get("/principal/dashboard")
 def principal_get_dashboard(
     period: str = Query("today", description="周期: session/today/week/month/semester"),
@@ -472,8 +478,11 @@ def principal_get_dashboard(
     """校长端多维度签到看板"""
     # 允许特定测试账号访问，即使数据库中角色未更新
     authorized_test_accounts = ["xz001", "xz002", "T15229628942"]
-    user_name = str(current_user.username)
-    is_authorized = (current_user.role in ["admin", "principal"]) or (user_name in authorized_test_accounts)
+    curr_name = str(current_user.username).strip().lower()
+    curr_emp_id = str(current_user.employee_id).strip().lower() if getattr(current_user, 'employee_id', None) else ""
+    
+    is_test_account = (curr_name in authorized_test_accounts) or (curr_emp_id in authorized_test_accounts)
+    is_authorized = (current_user.role in ["admin", "principal"]) or is_test_account
     
     if not is_authorized:
         raise HTTPException(status_code=403, detail="无权访问")
