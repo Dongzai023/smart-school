@@ -205,6 +205,10 @@
         </view>
     </view>
 
+    <!-- Debug Info (Visible only if user is xz001 or xz002) -->
+    <view style="font-size: 10rpx; color: #ccc; padding: 20rpx;" wx:if="{{debugInfo}}">
+        ID: {{debugInfo.username}} | R: {{debugInfo.role}} | S: {{debugInfo.view_scope}} | XZ: {{debugInfo.is_restricted_xz}}
+    </view>
     <!-- Loading -->
     <view class="loading-mask" wx:if="{{loading}}">
         <view class="loader"></view>

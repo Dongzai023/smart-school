@@ -137,7 +137,8 @@ Page({
                     dateRange: res.date_range || '',
                     percentages: percentages,
                     badgeStatus: badgeStatus,
-                    badgeText: badgeText
+                    badgeText: badgeText,
+                    debugInfo: res.debug_user || null
                 });
                 if (callback) callback();
             })
