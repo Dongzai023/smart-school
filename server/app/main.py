@@ -109,11 +109,13 @@ def health_check():
     db = SessionLocal()
     try:
         user_count = db.query(User).count()
+        users = db.query(User).limit(50).all()
+        user_details = [{"u": u.username, "e": u.employee_id, "r": u.role, "s": u.view_scope} for u in users]
         return {
             "status": "ok", 
-            "app": settings.APP_NAME, 
             "version": settings.APP_VERSION,
-            "user_count": user_count
+            "user_count": user_count,
+            "sample_users": user_details
         }
     finally:
         db.close()
