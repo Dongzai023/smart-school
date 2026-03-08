@@ -503,8 +503,14 @@ def principal_get_dashboard(
 
     # 2. 确定用户范围
     user_query = db.query(User).filter(User.is_active == True)
+    
     # 针对 xz002 特殊处理：强制仅能查看班主任数据
-    if str(current_user.username) == "xz002":
+    curr_name = str(current_user.username).lower()
+    curr_emp_id = str(current_user.employee_id).lower() if current_user.employee_id else ""
+    
+    is_restricted_xz = (curr_name == "xz002" or curr_emp_id == "xz002")
+    
+    if is_restricted_xz:
         user_query = user_query.filter(User.is_headmaster == True)
     elif current_user.view_scope == "head_teacher":
         user_query = user_query.filter(User.is_headmaster == True)
@@ -595,5 +601,12 @@ def principal_get_dashboard(
         "session_label": current_slot["label"] if current_slot else None,
         "date_range": f"{start_date.isoformat()} ~ {end_date.isoformat()}",
         "summary": summary,
-        "categories": categories
+        "categories": categories,
+        "debug_user": {
+            "username": current_user.username,
+            "employee_id": current_user.employee_id,
+            "role": current_user.role,
+            "view_scope": current_user.view_scope,
+            "is_restricted_xz": is_restricted_xz
+        }
     }
