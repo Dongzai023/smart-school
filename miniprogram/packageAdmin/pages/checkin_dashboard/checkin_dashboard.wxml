@@ -11,12 +11,8 @@
 
                     <view class="ph-content">
                         <view class="ph-top">
-                            <view class="pht-left" bindtap="goToUserList" data-type="all">
-                                <text class="pht-label">{{totalLabel}}</text>
-                                <view class="pht-value-row">
-                                    <text class="pht-value">{{summary.total}}</text>
-                                    <text class="pht-unit">人</text>
-                                </view>
+                            <view class="pht-left" style="flex: 1;">
+                                <text class="pht-label" style="font-size: 36rpx; color: #009966; font-weight: 900;">{{dashboardTitle || '签到数据看板'}}</text>
                             </view>
                             <view class="pht-right">
                                 <view class="ph-icon-box">

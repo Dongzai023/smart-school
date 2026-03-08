@@ -511,18 +511,30 @@ def principal_get_dashboard(
         start_date = checkin_date - timedelta(days=180)
         end_date = checkin_date
 
+    # 1. 确定标题与权限范围
+    curr_name = str(current_user.username).lower()
+    curr_emp_id = str(current_user.employee_id).lower() if getattr(current_user, 'employee_id', None) else ""
+    
+    is_xz001 = (curr_name == "xz001" or curr_emp_id == "xz001")
+    is_xz002 = (curr_name == "xz002" or curr_emp_id == "xz002")
+    
+    dashboard_title = "清涧中学签到数据看板"
+    force_headmaster_view = False
+    
+    if is_xz002:
+        dashboard_title = "清涧中学班主任签到数据看板"
+        force_headmaster_view = True
+    elif current_user.view_scope == "head_teacher":
+        dashboard_title = "清涧中学班主任签到数据看板"
+        force_headmaster_view = True
+    elif is_xz001:
+        dashboard_title = "清涧中学签到数据看板"
+        force_headmaster_view = False
+
     # 2. 确定用户范围
     user_query = db.query(User).filter(User.is_active == True)
     
-    # 针对 xz002 特殊处理：强制仅能查看班主任数据
-    curr_name = str(current_user.username).lower()
-    curr_emp_id = str(current_user.employee_id).lower() if current_user.employee_id else ""
-    
-    is_restricted_xz = (curr_name == "xz002" or curr_emp_id == "xz002")
-    
-    if is_restricted_xz:
-        user_query = user_query.filter(User.is_headmaster == True)
-    elif current_user.view_scope == "head_teacher":
+    if force_headmaster_view:
         user_query = user_query.filter(User.is_headmaster == True)
     
     # 排除管理员和校长自身，看老师和班主任
@@ -608,15 +620,20 @@ def principal_get_dashboard(
 
     return {
         "period": period,
+        "dashboard_title": dashboard_title,
         "session_label": current_slot["label"] if current_slot else None,
         "date_range": f"{start_date.isoformat()} ~ {end_date.isoformat()}",
         "summary": summary,
         "categories": categories,
         "debug_user": {
+            "id": current_user.id,
             "username": current_user.username,
-            "employee_id": current_user.employee_id,
+            "employee_id": getattr(current_user, 'employee_id', 'N/A'),
             "role": current_user.role,
             "view_scope": current_user.view_scope,
-            "is_restricted_xz": is_restricted_xz
+            "is_xz001": is_xz001,
+            "is_xz002": is_xz002,
+            "force_headmaster": force_headmaster_view,
+            "teacher_count": len(teachers)
         }
     }

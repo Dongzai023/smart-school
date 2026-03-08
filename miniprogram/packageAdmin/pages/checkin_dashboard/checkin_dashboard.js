@@ -44,12 +44,6 @@ Page({
     },
 
     onLoad: function () {
-        const userInfo = wx.getStorageSync('userInfo');
-        if (userInfo && userInfo.employeeId === 'xz002') {
-            this.setData({
-                totalLabel: '当前班主任总数'
-            });
-        }
         this.fetchData();
     },
 
@@ -135,6 +129,7 @@ Page({
                     },
                     sessionLabel: res.session_label || '',
                     dateRange: res.date_range || '',
+                    dashboardTitle: res.dashboard_title || '签到数据看板',
                     percentages: percentages,
                     badgeStatus: badgeStatus,
                     badgeText: badgeText,
