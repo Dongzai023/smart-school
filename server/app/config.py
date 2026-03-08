@@ -9,7 +9,7 @@ class Settings(BaseSettings):
 
     # Application
     APP_NAME: str = "希沃一体机管理系统"
-    APP_VERSION: str = "1.0.0"
+    APP_VERSION: str = "1.0.1"
     DEBUG: bool = False
 
     # Database
