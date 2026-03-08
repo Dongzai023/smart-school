@@ -522,19 +522,20 @@ def principal_get_dashboard(
     dashboard_title = "清涧中学签到数据看板"
     force_headmaster_view = False
     
-    # 逻辑判断
-    if is_xz002:
+    # 逻辑判断 (xz001 优先级最高，确保完全访问)
+    if is_xz001:
+        dashboard_title = "清涧中学签到数据看板"
+        force_headmaster_view = False
+    elif is_xz002:
         dashboard_title = "清涧中学班主任签到数据看板"
         force_headmaster_view = True
     elif current_user.view_scope == "head_teacher" or current_user.role == "head_teacher":
         dashboard_title = "清涧中学班主任签到数据看板"
         force_headmaster_view = True
-    elif is_xz001:
+    else:
+        # 其他教育处/管理员/默认情况
         dashboard_title = "清涧中学签到数据看板"
         force_headmaster_view = False
-    else:
-        # 其他教育处/管理员
-        dashboard_title = "清涧中学签到数据看板"
 
     # 2. 确定用户范围
     user_query = db.query(User).filter(User.is_active == True)
