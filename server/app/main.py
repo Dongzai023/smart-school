@@ -142,15 +142,18 @@ def _ensure_principals_exist():
             principal = User(
                 username="xz001",
                 employee_id="xz001",
-                password_hash=hash_password("xz001@qjzx"),
+                password_hash=hash_password("135135"),
                 real_name="校长(全量演示)",
                 role="principal", 
                 view_scope="all",
-                is_headmaster=False, # 关健：主校区视角
+                is_headmaster=False, 
                 is_active=True
             )
             db.add(principal)
             logger.info("Created account xz001 (Principal View)")
+        else:
+            # Update password if it was the default one
+            principal.password_hash = hash_password("135135")
 
         # 2. xz002: 班主任管理视角 (Headmaster Access)
         headmaster = db.query(User).filter(User.username == "xz002").first()
@@ -158,15 +161,18 @@ def _ensure_principals_exist():
             headmaster = User(
                 username="xz002",
                 employee_id="xz002",
-                password_hash=hash_password("xz002@qjzx"),
+                password_hash=hash_password("246246"),
                 real_name="校长(班主任专版)",
-                role="principal", # 角色也是校长，但视角不同
+                role="principal", 
                 view_scope="head_teacher",
                 is_headmaster=True,
                 is_active=True
             )
             db.add(headmaster)
             logger.info("Created account xz002 (Headmaster View)")
+        else:
+            # Update password
+            headmaster.password_hash = hash_password("246246")
 
         db.commit()
     except Exception as e:
