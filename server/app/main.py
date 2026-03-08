@@ -106,7 +106,17 @@ def get_scheduler_jobs(admin: User = Depends(require_admin)):
 @app.get("/api/health")
 def health_check():
     """Health check endpoint."""
-    return {"status": "ok", "app": settings.APP_NAME, "version": settings.APP_VERSION}
+    db = SessionLocal()
+    try:
+        user_count = db.query(User).count()
+        return {
+            "status": "ok", 
+            "app": settings.APP_NAME, 
+            "version": settings.APP_VERSION,
+            "user_count": user_count
+        }
+    finally:
+        db.close()
 
 
 def _ensure_admin_exists():
