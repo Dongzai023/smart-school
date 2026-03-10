@@ -441,6 +441,8 @@ def admin_get_user_stats(
         query = query.filter(User.department == department)
     if is_headmaster is True:
         query = query.filter((User.is_headmaster == True) | (User.role == "head_teacher"))
+    if role:
+        query = query.filter(User.role == role)
     
     total = query.count()
     users = query.offset((page - 1) * page_size).limit(page_size).all()
