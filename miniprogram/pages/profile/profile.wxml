@@ -82,7 +82,7 @@
           <text class="quick-badge-text">{{unlocked_count}}/{{total_count}}</text>
         </view>
       </view>
-      <view class="quick-item" bindtap="goToDashboard" wx:if="{{userInfo.role === 'principal' || userInfo.role === 'admin' || userInfo.view_scope === 'all' || userInfo.view_scope === 'head_teacher'}}">
+      <view class="quick-item" bindtap="goToDashboard" wx:if="{{userInfo.role === 'principal' || userInfo.role === 'admin' || userInfo.view_scope === 'all' || userInfo.view_scope === 'head_teacher' || userInfo.view_scope === 'subject_teacher'}}">
         <view class="quick-icon" style="background: linear-gradient(135deg, #ff9a9e 0%, #fecfef 100%);">
           <image class="quick-icon-img" src="/assets/CodeBubbyAssets/2_517/1.svg" mode="aspectFit"></image>
         </view>

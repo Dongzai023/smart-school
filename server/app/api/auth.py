@@ -82,6 +82,7 @@ async def login(req: LoginRequest, db: Session = Depends(get_db)):
                     # Check if this openid is already bound to another user
                     other_user = db.query(User).filter(User.wx_openid == openid, User.id != user.id).first()
                     if other_user:
+                        print(f"DEBUG: WeChat Binding Conflict - User {user.username} (ID: {user.id}) tried to bind OpenID {openid}, but it is already bound to {other_user.username} (ID: {other_user.id})")
                         raise HTTPException(
                             status_code=status.HTTP_403_FORBIDDEN, 
                             detail=f"此微信已绑定账号({other_user.real_name})，不可重复绑定"
@@ -89,10 +90,12 @@ async def login(req: LoginRequest, db: Session = Depends(get_db)):
 
                     if not user.wx_openid:
                         # First time login on mini-program, bind openid
+                        print(f"DEBUG: WeChat Binding Success - Binding User {user.username} (ID: {user.id}) to OpenID {openid}")
                         user.wx_openid = openid
                         db.commit()
                     elif user.wx_openid != openid:
                         # OpenID mismatch
+                        print(f"DEBUG: WeChat OpenID Mismatch - User {user.username} (ID: {user.id}) has stored OpenID [{user.wx_openid}], but login used [{openid}]")
                         raise HTTPException(
                             status_code=status.HTTP_403_FORBIDDEN, 
                             detail="当前微信账号与绑定的用户不一致，请联系管理员"

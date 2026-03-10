@@ -10,7 +10,14 @@
           <el-icon><Avatar /></el-icon>
           <span class="admin-name">系统管理员: {{ adminAccount.real_name || 'admin' }}</span>
         </div>
-        <el-button type="danger" size="small" plain @click="openEditDialog(adminAccount)">修改密码/资料</el-button>
+        <div class="admin-actions">
+          <el-button type="danger" size="small" plain @click="openEditDialog(adminAccount)">修改密码/资料</el-button>
+          <el-popconfirm title="确定解绑系统管理员的微信?" @confirm="unbindWx(adminAccount)" v-if="adminAccount.is_wechat_bound">
+            <template #reference>
+              <el-button type="warning" size="small" plain>解绑微信</el-button>
+            </template>
+          </el-popconfirm>
+        </div>
       </div>
     </div>
 
@@ -79,6 +86,13 @@
             <el-switch v-model="row.is_headmaster" @change="toggleHeadmaster(row)" :loading="row._loading" />
           </template>
         </el-table-column>
+        <el-table-column label="微信绑定" min-width="80">
+          <template #default="{ row }">
+            <el-tag :type="row.is_wechat_bound ? 'success' : 'info'" size="small">
+              {{ row.is_wechat_bound ? '已绑定' : '未绑定' }}
+            </el-tag>
+          </template>
+        </el-table-column>
         <el-table-column label="看板范围" min-width="100">
           <template #default="{ row }">
             <el-tag :type="row.view_scope === 'all' ? 'success' : (row.view_scope === 'head_teacher' ? 'warning' : (row.view_scope === 'subject_teacher' ? 'primary' : 'info'))">
@@ -89,7 +103,7 @@
         <el-table-column label="操作" width="220" fixed="right">
           <template #default="{ row }">
             <el-button size="small" type="primary" link @click="openEditDialog(row)">编辑</el-button>
-            <el-popconfirm title="确定解绑此用户的微信?" @confirm="unbindWx(row)">
+            <el-popconfirm title="确定解绑此用户的微信?" @confirm="unbindWx(row)" v-if="row.is_wechat_bound">
               <template #reference>
                 <el-button size="small" type="warning" link>解绑微信</el-button>
               </template>

@@ -152,7 +152,7 @@
   </view>
 
   <!-- 管理端入口 (仅校长/管理员/授权看板的人员可见) -->
-  <view class="stats-card management-card" bindtap="goToDashboard" wx:if="{{userInfo.role === 'principal' || userInfo.role === 'admin' || userInfo.view_scope === 'all' || userInfo.view_scope === 'head_teacher'}}">
+  <view class="stats-card management-card" bindtap="goToDashboard" wx:if="{{userInfo.role === 'principal' || userInfo.role === 'admin' || userInfo.view_scope === 'all' || userInfo.view_scope === 'head_teacher' || userInfo.view_scope === 'subject_teacher'}}">
     <view class="stats-icon-wrap" style="background: linear-gradient(135deg, #ff9a9e 0%, #fecfef 100%);">
       <view class="stats-icon">
         <image src="/assets/CodeBubbyAssets/2_517/1.svg" mode="aspectFit" style="width: 40rpx; height: 40rpx;"></image>

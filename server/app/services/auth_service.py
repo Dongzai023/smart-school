@@ -82,3 +82,10 @@ def require_admin(current_user: User = Depends(get_current_user)) -> User:
     if current_user.role != "admin":
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="需要管理员权限")
     return current_user
+
+
+def require_mgmt(current_user: User = Depends(get_current_user)) -> User:
+    """Require admin or principal role."""
+    if current_user.role not in ["admin", "principal"]:
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="需要管理权限")
+    return current_user

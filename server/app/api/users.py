@@ -12,7 +12,7 @@ from app.database import get_db
 from app.models.user import User
 from app.models.checkin_record import CheckinRecord
 from app.models.leave import Leave
-from app.services.auth_service import get_current_user, hash_password, require_admin
+from app.services.auth_service import get_current_user, hash_password, require_admin, require_mgmt
 
 router = APIRouter(prefix="/users", tags=["用户"])
 
@@ -299,7 +299,7 @@ def admin_list_users(
     role: Optional[str] = None,
     department: Optional[str] = None,
     db: Session = Depends(get_db),
-    admin: User = Depends(require_admin)
+    admin: User = Depends(require_mgmt)
 ):
     """管理员获取用户列表"""
     query = db.query(User).filter(User.is_active == True)
@@ -327,6 +327,7 @@ def admin_list_users(
                 "can_scan_unlock": getattr(u, 'can_scan_unlock', False),
                 "is_active": u.is_active,
                 "view_scope": getattr(u, 'view_scope', ''),
+                "is_wechat_bound": bool(u.wx_openid),
                 "created_at": u.created_at.isoformat() if u.created_at else None
             }
             for u in users
@@ -356,29 +357,29 @@ class UserUpdate(BaseModel):
 
 
 @router.post("/admin/create")
-def admin_create_user(
-    data: UserCreate,
+def create_user(
+    form_user: UserCreate,
     db: Session = Depends(get_db),
-    admin: User = Depends(require_admin)
+    admin: User = Depends(require_mgmt)
 ):
     """管理员创建用户"""
     # 检查工号是否已存在
     existing = db.query(User).filter(
-        (User.username == data.employee_id) | 
-        (User.employee_id == data.employee_id)
+        (User.username == form_user.employee_id) | 
+        (User.employee_id == form_user.employee_id)
     ).first()
     if existing:
         raise HTTPException(status_code=400, detail="该工号已存在")
     
     # 创建用户
     new_user = User(
-        username=data.employee_id,
-        employee_id=data.employee_id,
-        real_name=data.real_name,
-        nickname=data.nickname or "",
-        password_hash=hash_password(data.password),
-        department=data.department or "",
-        role=data.role,
+        username=form_user.employee_id,
+        employee_id=form_user.employee_id,
+        real_name=form_user.real_name,
+        nickname=form_user.nickname or "",
+        password_hash=hash_password(form_user.password),
+        department=form_user.department or "",
+        role=form_user.role,
         is_active=True,
     )
     
@@ -397,29 +398,29 @@ def admin_create_user(
 
 
 @router.put("/admin/{user_id}")
-def admin_update_user(
+def update_user(
     user_id: int,
-    data: UserUpdate,
+    user_update: UserUpdate,
     db: Session = Depends(get_db),
-    admin: User = Depends(require_admin)
+    admin: User = Depends(require_mgmt)
 ):
     """管理员更新用户信息"""
     user = db.query(User).filter(User.id == user_id).first()
     if not user:
         raise HTTPException(status_code=404, detail="用户不存在")
     
-    if data.real_name is not None:
-        user.real_name = data.real_name
-    if data.nickname is not None:
-        user.nickname = data.nickname
-    if data.department is not None:
-        user.department = data.department
-    if data.role is not None:
-        user.role = data.role
-    if data.view_scope is not None:
-        user.view_scope = data.view_scope
-    if data.new_password:
-        user.password_hash = hash_password(data.new_password)
+    if user_update.real_name is not None:
+        user.real_name = user_update.real_name
+    if user_update.nickname is not None:
+        user.nickname = user_update.nickname
+    if user_update.department is not None:
+        user.department = user_update.department
+    if user_update.role is not None:
+        user.role = user_update.role
+    if user_update.view_scope is not None:
+        user.view_scope = user_update.view_scope
+    if user_update.new_password:
+        user.password_hash = hash_password(user_update.new_password)
     
     db.commit()
     
@@ -427,10 +428,10 @@ def admin_update_user(
 
 
 @router.delete("/admin/{user_id}")
-def admin_delete_user(
+def delete_user(
     user_id: int,
     db: Session = Depends(get_db),
-    admin: User = Depends(require_admin)
+    admin: User = Depends(require_mgmt)
 ):
     """管理员删除用户"""
     user = db.query(User).filter(User.id == user_id).first()
@@ -446,27 +447,27 @@ def admin_delete_user(
 @router.put("/admin/{user_id}/permissions")
 def update_user_permissions(
     user_id: int,
-    data: UserPermissionUpdate,
+    perm_update: UserPermissionUpdate,
     db: Session = Depends(get_db),
-    admin: User = Depends(require_admin)
+    admin: User = Depends(require_mgmt)
 ):
     """管理员修改用户权限"""
     user = db.query(User).filter(User.id == user_id).first()
     if not user:
         raise HTTPException(status_code=404, detail="用户不存在")
     
-    if data.can_scan_unlock is not None:
-        user.can_scan_unlock = data.can_scan_unlock
-    if data.is_verified is not None:
-        user.is_verified = data.is_verified
-    if data.is_active is not None:
-        user.is_active = data.is_active
-    if data.is_headmaster is not None:
-        user.is_headmaster = data.is_headmaster
-    if data.role is not None:
-        user.role = data.role
-    if data.view_scope is not None:
-        user.view_scope = data.view_scope
+    if perm_update.can_scan_unlock is not None:
+        user.can_scan_unlock = perm_update.can_scan_unlock
+    if perm_update.is_verified is not None:
+        user.is_verified = perm_update.is_verified
+    if perm_update.is_active is not None:
+        user.is_active = perm_update.is_active
+    if perm_update.is_headmaster is not None:
+        user.is_headmaster = perm_update.is_headmaster
+    if perm_update.role is not None:
+        user.role = perm_update.role
+    if perm_update.view_scope is not None:
+        user.view_scope = perm_update.view_scope
     
     db.commit()
     
@@ -477,7 +478,7 @@ def update_user_permissions(
 def unbind_wx(
     user_id: int,
     db: Session = Depends(get_db),
-    admin: User = Depends(require_admin)
+    admin: User = Depends(require_mgmt)
 ):
     """管理员解绑微信"""
     user = db.query(User).filter(User.id == user_id).first()
