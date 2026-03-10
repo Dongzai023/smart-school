@@ -100,4 +100,5 @@ export const userApi = {
     delete: (userId) => api.delete(`/users/admin/${userId}`),
     updatePermissions: (userId, data) => api.put(`/users/admin/${userId}/permissions`, data),
     unbindWx: (userId) => api.put(`/users/admin/${userId}/unbind-wx`),
+    getStatsOverview: (params) => api.get('/statistics/admin/overview', { params }),
 }

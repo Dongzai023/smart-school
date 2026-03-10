@@ -289,14 +289,15 @@ async function loadData() {
       _loading: false 
     }))
     
+    // 加载统计概览 (新加)
+    const statsOverview = await userApi.getStatsOverview({ role: filters.role })
+    
     // 计算统计数据
-    const allUsers = users.value
-    const totalCount = usersData.total || usersData.items?.length || allUsers.length
     stats.value = {
-      total_users: usersData.total || 145,
+      total_users: statsOverview.total_users || usersData.total || allUsers.length,
       active_users: allUsers.filter(u => u.is_active !== false).length,
       can_scan_unlock: allUsers.filter(u => u.is_verified === true).length,
-      today_checkins: 0
+      today_checkins: statsOverview.signed_today || 0
     }
     pagination.total = usersData.total || 145
   } catch (e) {
@@ -316,6 +317,17 @@ async function loadUsers() {
       real_name: u.real_name || u.name,
       _loading: false 
     }))
+    
+    // 更新统计数据 (同步更新)
+    const statsOverview = await userApi.getStatsOverview({ role: filters.role })
+    const allUsers = users.value
+    stats.value = {
+      total_users: statsOverview.total_users || usersData.total || allUsers.length,
+      active_users: allUsers.filter(u => u.is_active !== false).length,
+      can_scan_unlock: allUsers.filter(u => u.is_verified === true).length,
+      today_checkins: statsOverview.signed_today || 0
+    }
+    
     pagination.total = usersData.total || 144
   } catch (e) {
     console.error('Load users error:', e)
