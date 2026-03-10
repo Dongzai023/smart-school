@@ -360,6 +360,7 @@ def get_records(
 def admin_get_overview(
     department: Optional[str] = Query(None),
     is_headmaster: Optional[bool] = Query(None),
+    role: Optional[str] = Query(None),
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user)
 ):
@@ -374,7 +375,8 @@ def admin_get_overview(
         user_query = user_query.filter(User.department == department)
     if is_headmaster is True:
         user_query = user_query.filter((User.is_headmaster == True) | (User.role == "head_teacher"))
-    
+    if role:
+        user_query = user_query.filter(User.role == role)
     total_users = user_query.count()
     
     # 今日已签到人数
@@ -401,11 +403,14 @@ def admin_get_overview(
         CheckinRecord.user_id.in_(active_user_ids)
     ).scalar() or 0
     
-    # 今日未签人数
-    absent_today = total_users - signed_today
+    # 计算各类用户总数
+    active_users = user_query.filter(User.is_active == True).count()
+    verified_users = user_query.filter(User.is_verified == True).count()
     
     return {
         "total_users": total_users,
+        "active_users": active_users,
+        "verified_users": verified_users,
         "signed_today": signed_today,
         "late_today": late_today,
         "absent_today": absent_today,
