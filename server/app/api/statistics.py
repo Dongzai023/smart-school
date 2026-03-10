@@ -406,6 +406,7 @@ def admin_get_overview(
     # 计算各类用户总数
     active_users = user_query.filter(User.is_active == True).count()
     verified_users = user_query.filter(User.is_verified == True).count()
+    absent_today = total_users - signed_today
     
     return {
         "total_users": total_users,
