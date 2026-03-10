@@ -467,3 +467,41 @@
   background: #E2E8F0;
   margin: 0 20rpx;
 }
+
+/* 底部信息 */
+.footer {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 48rpx 0;
+  opacity: 0.4;
+}
+
+.footer-icon {
+  width: 64rpx;
+  height: 4rpx;
+  margin-bottom: 24rpx;
+}
+
+.footer-title {
+  font-size: 20rpx;
+  font-family: Inter, sans-serif;
+  font-weight: 900;
+  color: #0F172B;
+  margin-bottom: 12rpx;
+}
+
+.footer-subtitle {
+  font-size: 18rpx;
+  font-family: Inter, sans-serif;
+  font-weight: 700;
+  color: #62748E;
+}
+
+.bottom-safe-area {
+  height: 100rpx;
+}
+footer-copyright{
+  font-size: 9rpx;
+  color: #62748E;
+}

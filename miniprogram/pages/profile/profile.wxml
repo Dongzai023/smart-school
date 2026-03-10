@@ -82,6 +82,12 @@
           <text class="quick-badge-text">{{unlocked_count}}/{{total_count}}</text>
         </view>
       </view>
+      <view class="quick-item" bindtap="goToDashboard" wx:if="{{userInfo.role === 'principal' || userInfo.role === 'admin' || userInfo.view_scope === 'all' || userInfo.view_scope === 'head_teacher'}}">
+        <view class="quick-icon" style="background: linear-gradient(135deg, #ff9a9e 0%, #fecfef 100%);">
+          <image class="quick-icon-img" src="/assets/CodeBubbyAssets/2_517/1.svg" mode="aspectFit"></image>
+        </view>
+        <text class="quick-text">管理看板</text>
+      </view>
       <view class="quick-item" bindtap="goToSettings">
         <view class="quick-icon quick-gray">
           <image class="quick-icon-img" src="/assets/CodeBubbyAssets/5_4/8.svg" mode="aspectFit"></image>
@@ -255,7 +261,7 @@
     <!-- 底部信息 -->
     <view class="footer">
       <image class="footer-icon" src="/assets/CodeBubbyAssets/5_4/38.svg" mode="aspectFit"></image>
-      <text class="footer-title">清涧中学考勤系统</text>
+      <text class="footer-title">海亮教育·清涧中学考勤系统</text>
       <text class="footer-subtitle">DIGITAL ATTENDANCE PLATFORM</text>
       <text class="footer-copyright">版权所有 © 2024-2026</text>
     </view>

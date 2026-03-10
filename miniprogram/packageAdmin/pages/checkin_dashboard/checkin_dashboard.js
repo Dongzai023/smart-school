@@ -157,5 +157,36 @@ Page({
         wx.navigateTo({
             url: `../user_list/user_list?type=${type}&period=${this.data.activePeriod}`
         });
+    },
+
+    goToUserDetail: function (e) {
+        const userId = e.currentTarget.dataset.id;
+        if (!userId) return;
+        wx.navigateTo({
+            url: `../user_detail/user_detail?userId=${userId}`
+        });
+    },
+
+    onLogout: function () {
+        wx.showModal({
+            title: '提示',
+            content: '确定要退出当前账户吗？',
+            confirmColor: '#dc2626',
+            success: (res) => {
+                if (res.confirm) {
+                    const app = getApp();
+                    // 清除全局数据
+                    app.globalData.token = null;
+                    app.globalData.userInfo = null;
+                    // 清除本地存储
+                    wx.removeStorageSync('token');
+                    wx.removeStorageSync('userInfo');
+                    // 重启到登录页
+                    wx.reLaunch({
+                        url: '/pages/login/login'
+                    });
+                }
+            }
+        });
     }
 });

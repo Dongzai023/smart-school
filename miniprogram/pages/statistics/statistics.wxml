@@ -247,7 +247,7 @@
   <!-- 底部信息 -->
   <view class="footer">
     <image class="footer-icon" src="/assets/CodeBubbyAssets/3_4/54.svg" mode="aspectFit"></image>
-    <text class="footer-title">清涧中学考勤系统</text>
+    <text class="footer-title">海亮教育·清涧中学考勤系统</text>
     <text class="footer-subtitle">DIGITAL ATTENDANCE PLATFORM</text>
   </view>
   

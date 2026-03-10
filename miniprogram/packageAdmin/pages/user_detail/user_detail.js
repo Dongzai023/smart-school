@@ -45,17 +45,31 @@ Page({
 
     fetchUserRecords() {
         const { userId } = this.data;
-        // 获取个人打卡详细记录 (后端返回的是按日分组的汇总)
+        const statusMap = {
+            'signed': { text: '正常', cls: 'normal' },
+            'normal': { text: '正常', cls: 'normal' },
+            'late': { text: '迟到', cls: 'late' },
+            'absent': { text: '缺勤', cls: 'absent' }
+        };
         api.getStatsRecords(20, userId).then(res => {
             const records = (res.records || []).map(r => {
+                const slots = (r.slots || []).map(s => ({
+                    label: s.label,
+                    time: s.time || '--',
+                    statusClass: statusMap[s.status] ? statusMap[s.status].cls : 'absent',
+                    statusText: statusMap[s.status] ? statusMap[s.status].text : '缺勤',
+                    hasData: !!s.time
+                }));
+                // 处理月份，去掉 "月" 字
+                const monthNum = r.month ? r.month.replace('月', '') : '';
                 return {
-                    id: r.id || Math.random(),
+                    id: r.date || Math.random(),
                     day: String(r.day).padStart(2, '0'),
-                    month: r.month,
-                    time: r.first_checkin_time || '--:--',
-                    statusText: r.status === 'normal' ? '正常签到' : (r.status === 'late' ? '迟到' : '缺勤'),
-                    statusClass: r.status,
-                    location: r.location || '清涧中学'
+                    month: monthNum,
+                    dateStr: `${String(r.day).padStart(2, '0')}/${monthNum}`,
+                    weekday: r.weekday || '',
+                    statusClass: r.status === 'normal' ? 'normal' : (r.status === 'late' ? 'late' : 'absent'),
+                    slots: slots
                 };
             });
             this.setData({ records });

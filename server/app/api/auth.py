@@ -63,9 +63,8 @@ async def login(req: LoginRequest, db: Session = Depends(get_db)):
     if not user.is_active:
         raise HTTPException(status_code=status.HTTP_430_FORBIDDEN, detail="账号已被禁用")
 
-    # WeChat OpenID Binding Logic (Exempt xz001/xz002)
-    is_test_account = user.username in ["xz001", "xz002"]
-    if req.code and settings.WX_APPID and settings.WX_SECRET and not is_test_account:
+    # WeChat OpenID Binding Logic
+    if req.code and settings.WX_APPID and settings.WX_SECRET:
         async with httpx.AsyncClient() as client:
             url = "https://api.weixin.qq.com/sns/jscode2session"
             params = {

@@ -49,28 +49,27 @@
 
     <view class="rs-list">
       <view class="record-item" wx:for="{{records}}" wx:key="id">
+        <!-- 左侧日期 -->
         <view class="ri-left">
           <view class="ril-date">
-            <text class="ril-day">{{item.day}}</text>
-            <text class="ril-month">{{item.month}}</text>
+            <text class="ril-datestr">{{item.dateStr}}</text>
           </view>
+          <text class="ril-weekday">{{item.weekday}}</text>
         </view>
 
+        <!-- 连接线 -->
         <view class="ri-center">
           <view class="ric-line">
             <view class="ric-dot {{item.statusClass}}"></view>
           </view>
         </view>
 
+        <!-- 右侧：4个时段一行 -->
         <view class="ri-right">
-          <view class="rir-card">
-            <view class="rirc-top">
-              <text class="rirc-time">{{item.time}}</text>
-              <view class="rirc-status {{item.statusClass}}">{{item.statusText}}</view>
-            </view>
-            <view class="rirc-bottom" wx:if="{{item.location}}">
-              <text class="rircb-icon">📍</text>
-              <text class="rircb-location">{{item.location}}</text>
+          <view class="rislots-row">
+            <view class="rislot {{slot.statusClass}}" wx:for="{{item.slots}}" wx:key="label" wx:for-item="slot">
+              <text class="rislot-label">{{slot.label}}</text>
+              <text class="rislot-time">{{slot.time}}</text>
             </view>
           </view>
         </view>
@@ -81,6 +80,16 @@
         <view class="es-icon">📋</view>
         <text class="es-text">该时段暂无考勤记录</text>
       </view>
+    </view>
+  </view>
+
+  <!-- 底部信息 -->
+  <view class="footer">
+    <image class="footer-icon" src="/assets/CodeBubbyAssets/2_509/1.svg" mode="aspectFit"></image>
+    <view class="footer-content">
+      <text class="footer-title">海亮教育·清涧中学教师数字化管理平台</text>
+      <text class="footer-record">陕ICP备202506048号</text>
+      <text class="footer-copyright">版权所有 © 2024-2026 TD 数字科技。保留所有权利。</text>
     </view>
   </view>
 </view>

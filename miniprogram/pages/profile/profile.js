@@ -115,6 +115,11 @@ Page({
     });
   },
 
+  goToDashboard() {
+    wx.navigateTo({
+      url: '/packageAdmin/pages/checkin_dashboard/checkin_dashboard'
+    });
+  },
   goToMessages() { wx.showToast({ title: '消息通知', icon: 'none' }); },
   goToLeaveApplication() {
     wx.navigateTo({

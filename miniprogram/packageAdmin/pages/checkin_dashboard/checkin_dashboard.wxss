@@ -616,6 +616,40 @@
     font-weight: 700;
 }
 
+/* Logout Action */
+.action-section {
+    padding: 0 48rpx 40rpx;
+    margin-top: 20rpx;
+}
+
+.logout-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 16rpx;
+    background: rgba(254, 226, 226, 0.5);
+    border: 2rpx solid rgba(252, 165, 165, 0.3);
+    border-radius: 28rpx;
+    padding: 24rpx;
+    transition: all 0.2s ease;
+}
+
+.logout-btn:active {
+    transform: scale(0.98);
+    background: rgba(254, 202, 202, 0.8);
+}
+
+.logout-icon {
+    font-size: 32rpx;
+}
+
+.logout-text {
+    font-size: 28rpx;
+    font-weight: 800;
+    color: #dc2626;
+    letter-spacing: 1rpx;
+}
+
 /* Loading */
 .loading-mask {
     position: fixed;

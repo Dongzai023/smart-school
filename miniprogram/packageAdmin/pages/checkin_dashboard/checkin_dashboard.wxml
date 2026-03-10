@@ -165,7 +165,7 @@
                         <text class="abli-name">{{item.real_name}}</text>
                         <text class="abli-dept">{{item.department || ''}}</text>
                     </view>
-                    <view class="abli-tag red">未签到</view>
+                    <view class="abli-tag red" bindtap="goToUserDetail" data-id="{{item.id}}">未签到</view>
                 </view>
 
                 <view class="abl-item" wx:for="{{categories.late}}" wx:key="id" wx:if="{{item.real_name}}">
@@ -176,7 +176,7 @@
                         <text class="abli-name">{{item.real_name}}</text>
                         <text class="abli-dept">{{item.department || ''}}</text>
                     </view>
-                    <view class="abli-tag orange">迟到 ×{{item.record_count || 1}}</view>
+                    <view class="abli-tag orange" bindtap="goToUserDetail" data-id="{{item.id}}">迟到 ×{{item.record_count || 1}}</view>
                 </view>
             </view>
         </view>
@@ -194,10 +194,18 @@
             </view>
 
             <view class="ns-grid" wx:if="{{expanded.normal}}">
-                <view class="nsg-item" wx:for="{{categories.normal}}" wx:key="id" wx:if="{{item.real_name}}">
+                <view class="nsg-item" wx:for="{{categories.normal}}" wx:key="id" wx:if="{{item.real_name}}" bindtap="goToUserDetail" data-id="{{item.id}}">
                     {{item.real_name}}
                 </view>
             </view>
+        </view>
+    </view>
+
+    <!-- Logout Action -->
+    <view class="action-section">
+        <view class="logout-btn" bindtap="onLogout">
+            <text class="logout-icon">🔓</text>
+            <text class="logout-text">退出当前账户</text>
         </view>
     </view>
 
@@ -205,7 +213,7 @@
     <view class="footer">
         <image class="footer-icon" src="/assets/CodeBubbyAssets/2_509/1.svg" mode="aspectFit"></image>
         <view class="footer-content">
-            <text class="footer-title">清涧中学 教师数字化管理平台</text>
+            <text class="footer-title">海亮教育·清涧中学教师数字化管理平台</text>
             <text class="footer-record">陕ICP备202506048号</text>
             <text class="footer-copyright">版权所有 © 2024-2026 TD 数字科技。保留所有权利。</text>
         </view>

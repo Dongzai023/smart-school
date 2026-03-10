@@ -280,4 +280,7 @@ module.exports = {
     getPrincipalDashboard: (params) => {
         return request('/api/statistics/principal/dashboard', 'GET', params);
     },
+    updateUserPermissions: (userId, data) => {
+        return request(`/api/users/admin/${userId}/permissions`, 'PUT', data);
+    },
 };

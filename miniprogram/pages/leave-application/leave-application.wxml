@@ -178,5 +178,11 @@
       </view>
     </view>
   </view>
-  
+      <!-- 底部信息 -->
+      <view class="footer">
+      <image class="footer-icon" src="/assets/CodeBubbyAssets/5_4/38.svg" mode="aspectFit"></image>
+      <text class="footer-title">海亮教育·清涧中学考勤系统</text>
+      <text class="footer-subtitle">DIGITAL ATTENDANCE PLATFORM</text>
+      <text class="footer-copyright" style="font-size: 22rpx;">版权所有 © 2024-2026</text>
+    </view>
 </view>

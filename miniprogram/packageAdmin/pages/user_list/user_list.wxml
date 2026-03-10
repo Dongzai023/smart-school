@@ -52,6 +52,16 @@
         <text class="es-text">暂无人员记录</text>
         <text class="es-hint">下拉刷新获取最新数据</text>
       </view>
+
+      <!-- 底部信息 -->
+      <view class="footer">
+        <image class="footer-icon" src="/assets/CodeBubbyAssets/2_509/1.svg" mode="aspectFit"></image>
+        <view class="footer-content">
+          <text class="footer-title">海亮教育·清涧中学教师数字化管理平台</text>
+          <text class="footer-record">陕ICP备202506048号</text>
+          <text class="footer-copyright">版权所有 © 2024-2026 TD 数字科技。保留所有权利。</text>
+        </view>
+      </view>
     </view>
   </scroll-view>
 </view>

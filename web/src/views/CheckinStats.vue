@@ -58,6 +58,10 @@
           <el-tag round size="small" type="info" style="margin-left:12px">Real-time Stream</el-tag>
         </div>
         <div class="panel-actions">
+          <el-radio-group v-model="filters.is_headmaster" @change="loadData" style="margin-right: 12px">
+            <el-radio-button :value="null">全部教师</el-radio-button>
+            <el-radio-button :value="true">班主任</el-radio-button>
+          </el-radio-group>
           <el-select v-model="filters.department" clearable placeholder="部门筛选" style="width:140px" @change="loadData">
             <el-option v-for="dept in departments" :key="dept" :label="dept" :value="dept" />
           </el-select>
@@ -193,7 +197,8 @@ const users = ref([])
 const departments = ref([])
 const filters = reactive({
   department: null,
-  period: 'week'
+  period: 'week',
+  is_headmaster: null
 })
 const pagination = reactive({ page: 1, pageSize: 20, total: 0 })
 
@@ -223,8 +228,21 @@ async function loadData() {
   loading.value = true
   try {
     const [overviewData, usersData] = await Promise.all([
-      api.get('/statistics/admin/overview'),
-      api.get('/statistics/admin/users', { params: { page: pagination.page, page_size: pagination.pageSize, department: filters.department, period: filters.period } })
+      api.get('/statistics/admin/overview', { 
+        params: { 
+          department: filters.department, 
+          is_headmaster: filters.is_headmaster 
+        } 
+      }),
+      api.get('/statistics/admin/users', { 
+        params: { 
+          page: pagination.page, 
+          page_size: pagination.pageSize, 
+          department: filters.department, 
+          period: filters.period,
+          is_headmaster: filters.is_headmaster 
+        } 
+      })
     ])
     overview.value = overviewData
     users.value = usersData.items

@@ -31,7 +31,6 @@ async def lifespan(app: FastAPI):
     # Startup
     init_db()
     _ensure_admin_exists()
-    _ensure_principals_exist()
     start_scheduler()
     yield
     # Shutdown
@@ -123,60 +122,5 @@ def _ensure_admin_exists():
             )
             db.add(admin)
             db.commit()
-    finally:
-        db.close()
-def _ensure_principals_exist():
-    """Ensure principal accounts exist for management viewing."""
-    db = SessionLocal()
-    try:
-        # Cleanup old version accounts if they exist (xz01, xz02)
-        for old_user in ["xz01", "xz02"]:
-            user = db.query(User).filter(User.username == old_user).first()
-            if user:
-                db.delete(user)
-                logger.info(f"Cleaned up legacy account: {old_user}")
-        
-        # 1. xz001: 真正的校长/管理员视角 (Full Access)
-        principal = db.query(User).filter(User.username == "xz001").first()
-        if not principal:
-            principal = User(
-                username="xz001",
-                employee_id="xz001",
-                password_hash=hash_password("135135"),
-                real_name="校长(全量演示)",
-                role="principal", 
-                view_scope="all",
-                is_headmaster=False, 
-                is_active=True
-            )
-            db.add(principal)
-            logger.info("Created account xz001 (Principal View)")
-        else:
-            # Update password if it was the default one
-            principal.password_hash = hash_password("135135")
-
-        # 2. xz002: 班主任管理视角 (Headmaster Access)
-        headmaster = db.query(User).filter(User.username == "xz002").first()
-        if not headmaster:
-            headmaster = User(
-                username="xz002",
-                employee_id="xz002",
-                password_hash=hash_password("246246"),
-                real_name="校长(班主任专版)",
-                role="principal", 
-                view_scope="head_teacher",
-                is_headmaster=True,
-                is_active=True
-            )
-            db.add(headmaster)
-            logger.info("Created account xz002 (Headmaster View)")
-        else:
-            # Update password
-            headmaster.password_hash = hash_password("246246")
-
-        db.commit()
-    except Exception as e:
-        logger.error(f"Error ensuring principal accounts: {e}")
-        db.rollback()
     finally:
         db.close()

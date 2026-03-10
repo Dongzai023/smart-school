@@ -15,7 +15,7 @@
         </view>
         <view class="logo-badge"></view>
       </view>
-      <text class="app-title">清涧中学考勤管理</text>
+      <text class="app-title">海亮教育·清涧中学考勤管理</text>
       <text class="app-subtitle">TEACHER ATTENDANCE SYSTEM</text>
     </view>
 
@@ -83,7 +83,7 @@
   <view class="footer">
     <image class="footer-icon" src="/assets/CodeBubbyAssets/2_509/1.svg" mode="aspectFit"></image>
     <view class="footer-content">
-      <text class="footer-title">清涧中学 教师数字化管理平台</text>
+      <text class="footer-title">海亮教育·清涧中学 教师数字化管理平台</text>
       <text class="footer-record">陕ICP备202506048号</text>
       <text class="footer-copyright">版权所有 © 2024-2026 TD 数字科技。保留所有权利。</text>
     </view>
