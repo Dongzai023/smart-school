@@ -478,6 +478,7 @@ def admin_get_user_stats(
             "is_headmaster": user.is_headmaster or user.role == "head_teacher",
             "is_verified": user.is_verified or False,
             "view_scope": user.view_scope or "",
+            "is_wechat_bound": bool(user.wx_openid),
             "signed_count": signed,
             "late_count": late,
             "absent_count": absent,
