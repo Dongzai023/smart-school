@@ -2,7 +2,7 @@
 
 from datetime import datetime, timedelta
 from typing import Optional
-from fastapi import APIRouter, Depends, HTTPException, UploadFile, File
+from fastapi import APIRouter, Depends, HTTPException, UploadFile, File, Query
 from pydantic import BaseModel
 from sqlalchemy.orm import Session
 import os
@@ -75,6 +75,7 @@ def get_current_user_info(current_user: User = Depends(get_current_user)):
         "gender": current_user.gender or "未知",
         "teaching_subject": current_user.teaching_subject or "",
         "role": current_user.role,
+        "view_scope": current_user.view_scope or "",
         "is_headmaster": current_user.is_headmaster or current_user.role == "head_teacher",
         "is_verified": current_user.is_verified,
         "avatar_url": current_user.avatar_url or "",
@@ -193,13 +194,7 @@ def get_user_stats(
 ):
     """获取用户统计"""
     target_user = current_user
-    username = str(current_user.username).strip().lower()
-    employee_id = str(current_user.employee_id).strip().lower() if getattr(current_user, 'employee_id', None) else ""
-    whitelisted = ["xz001", "xz002", "t15229628942"]
-    
-    is_whitelisted = (username in whitelisted) or (employee_id in whitelisted)
-    is_mgmt = (current_user.role in ["admin", "principal"]) or (current_user.view_scope in ["all", "head_teacher"])
-    is_auth_for_all = is_whitelisted or is_mgmt
+    is_auth_for_all = (current_user.role in ["admin", "principal"]) or (current_user.view_scope in ["all", "head_teacher", "subject_teacher"])
     
     if user_id and is_auth_for_all:
         target_user = db.query(User).filter(User.id == user_id).first()
@@ -293,6 +288,8 @@ class UserPermissionUpdate(BaseModel):
     is_verified: Optional[bool] = None
     is_active: Optional[bool] = None
     is_headmaster: Optional[bool] = None
+    view_scope: Optional[str] = None
+    role: Optional[str] = None
 
 
 @router.get("/admin/list")
@@ -305,7 +302,7 @@ def admin_list_users(
     admin: User = Depends(require_admin)
 ):
     """管理员获取用户列表"""
-    query = db.query(User)
+    query = db.query(User).filter(User.is_active == True)
     
     if role:
         query = query.filter(User.role == role)
@@ -329,6 +326,7 @@ def admin_list_users(
                 "is_verified": getattr(u, 'is_verified', True),
                 "can_scan_unlock": getattr(u, 'can_scan_unlock', False),
                 "is_active": u.is_active,
+                "view_scope": getattr(u, 'view_scope', ''),
                 "created_at": u.created_at.isoformat() if u.created_at else None
             }
             for u in users
@@ -353,6 +351,7 @@ class UserUpdate(BaseModel):
     nickname: Optional[str] = None
     department: Optional[str] = None
     role: Optional[str] = None
+    view_scope: Optional[str] = None
     new_password: Optional[str] = None
 
 
@@ -417,6 +416,8 @@ def admin_update_user(
         user.department = data.department
     if data.role is not None:
         user.role = data.role
+    if data.view_scope is not None:
+        user.view_scope = data.view_scope
     if data.new_password:
         user.password_hash = hash_password(data.new_password)
     
@@ -436,13 +437,10 @@ def admin_delete_user(
     if not user:
         raise HTTPException(status_code=404, detail="用户不存在")
     
-    if user.role == "admin":
-        raise HTTPException(status_code=400, detail="不能删除管理员账号")
-    
-    db.delete(user)
+    user.is_active = False
     db.commit()
     
-    return {"message": "用户删除成功"}
+    return {"message": "用户已禁用 (软删除)", "user_id": user_id}
 
 
 @router.put("/admin/{user_id}/permissions")
@@ -465,10 +463,14 @@ def update_user_permissions(
         user.is_active = data.is_active
     if data.is_headmaster is not None:
         user.is_headmaster = data.is_headmaster
+    if data.role is not None:
+        user.role = data.role
+    if data.view_scope is not None:
+        user.view_scope = data.view_scope
     
     db.commit()
     
-    return {"message": "权限更新成功", "user_id": user_id}
+    return {"message": "权限更新成功", "user_id": user_id, "view_scope": user.view_scope, "role": user.role}
 
 
 @router.put("/admin/{user_id}/unbind-wx")

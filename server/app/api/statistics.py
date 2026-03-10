@@ -46,12 +46,8 @@ def get_overview(
     """获取统计概览"""
     target_user_id = current_user.id
     username = str(current_user.username).strip().lower()
-    employee_id = str(current_user.employee_id).strip().lower() if getattr(current_user, 'employee_id', None) else ""
-    whitelisted = ["xz001", "xz002", "t15229628942"]
-    
-    is_whitelisted = (username in whitelisted) or (employee_id in whitelisted)
-    is_mgmt = (current_user.role in ["admin", "principal"]) or (current_user.view_scope in ["all", "head_teacher"])
-    is_auth_for_all = is_whitelisted or is_mgmt
+    is_mgmt = (current_user.role in ["admin", "principal"])
+    is_auth_for_all = is_mgmt or (current_user.view_scope in ["all", "head_teacher", "subject_teacher"])
     
     if user_id and is_auth_for_all:
         target_user_id = user_id
@@ -261,11 +257,8 @@ def get_records(
     target_user_id = current_user.id
     username = str(current_user.username).strip().lower()
     employee_id = str(current_user.employee_id).strip().lower() if getattr(current_user, 'employee_id', None) else ""
-    whitelisted = ["xz001", "xz002", "t15229628942"]
-    
-    is_whitelisted = (username in whitelisted) or (employee_id in whitelisted)
-    is_mgmt = (current_user.role in ["admin", "principal"]) or (current_user.view_scope in ["all", "head_teacher"])
-    is_auth_for_all = is_whitelisted or is_mgmt
+    is_mgmt = (current_user.role in ["admin", "principal"])
+    is_auth_for_all = is_mgmt or (current_user.view_scope in ["all", "head_teacher", "subject_teacher"])
     
     if user_id and is_auth_for_all:
         target_user_id = user_id
@@ -314,6 +307,30 @@ def get_records(
         else:
             day_status = "normal"
         
+        # 各时段签到详情
+        # 判断目标用户是班主任还是科任老师
+        target_user_for_slots = db.query(User).filter(User.id == target_user_id).first()
+        is_hm = target_user_for_slots and (target_user_for_slots.is_headmaster or target_user_for_slots.role == "head_teacher")
+        slots_config = get_user_time_slots(is_hm)
+        
+        slot_details = []
+        record_by_slot = {r.time_slot_id: r for r in day_records}
+        for slot in slots_config:
+            slot_id = slot["id"]
+            slot_label = slot["label"]
+            rec = record_by_slot.get(slot_id)
+            if rec:
+                slot_status = rec.status
+                slot_time = rec.checkin_time.strftime("%H:%M") if rec.checkin_time else "--:--"
+            else:
+                slot_status = "absent"
+                slot_time = None
+            slot_details.append({
+                "label": slot_label,
+                "status": slot_status,
+                "time": slot_time
+            })
+        
         # 最早签到时间
         first_time = None
         signed_records = [r for r in day_records if r.status in ("signed", "normal", "late")]
@@ -328,7 +345,8 @@ def get_records(
             "weekday": weekday_names[d.weekday()],
             "status": day_status,
             "first_checkin_time": first_time,
-            "location": day_records[0].location if day_records else "清涧中学"
+            "location": day_records[0].location if day_records else "清涧中学",
+            "slots": slot_details
         })
     
     return {"records": records, "total": total}
@@ -340,6 +358,8 @@ def get_records(
 
 @router.get("/admin/overview")
 def admin_get_overview(
+    department: Optional[str] = Query(None),
+    is_headmaster: Optional[bool] = Query(None),
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user)
 ):
@@ -348,20 +368,37 @@ def admin_get_overview(
         raise HTTPException(status_code=403, detail="需要管理权限")
     today = date.today()
     
-    # 今日应签到人数
-    total_users = db.query(User).filter(User.is_active == True).count()
+    # 基础查询
+    user_query = db.query(User).filter(User.is_active == True)
+    if department:
+        user_query = user_query.filter(User.department == department)
+    if is_headmaster is True:
+        user_query = user_query.filter((User.is_headmaster == True) | (User.role == "head_teacher"))
+    
+    total_users = user_query.count()
     
     # 今日已签到人数
-    today_start = datetime.combine(today, datetime.min.time())
+    active_user_ids = [u.id for u in user_query.all()]
+    if not active_user_ids:
+        return {
+            "total_users": 0,
+            "signed_today": 0,
+            "late_today": 0,
+            "absent_today": 0,
+            "attendance_rate": 0
+        }
+
     signed_today = db.query(func.count(func.distinct(CheckinRecord.user_id))).filter(
         CheckinRecord.checkin_date == today,
-        CheckinRecord.status.in_(["signed", "normal", "late"])
+        CheckinRecord.status.in_(["signed", "normal", "late"]),
+        CheckinRecord.user_id.in_(active_user_ids)
     ).scalar() or 0
     
     # 今日迟到人数
     late_today = db.query(func.count(func.distinct(CheckinRecord.user_id))).filter(
         CheckinRecord.checkin_date == today,
-        CheckinRecord.status == "late"
+        CheckinRecord.status == "late",
+        CheckinRecord.user_id.in_(active_user_ids)
     ).scalar() or 0
     
     # 今日未签人数
@@ -382,6 +419,7 @@ def admin_get_user_stats(
     page_size: int = Query(20, ge=1, le=100),
     department: str = Query(None, description="部门筛选"),
     period: str = Query("week", description="统计周期"),
+    is_headmaster: Optional[bool] = Query(None, description="是否只看班主任"),
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user),
     role: str = Query(None, description="角色筛选")
@@ -395,8 +433,8 @@ def admin_get_user_stats(
     query = db.query(User).filter(User.is_active == True)
     if department:
         query = query.filter(User.department == department)
-    if role:
-        query = query.filter(User.role == role)
+    if is_headmaster is True:
+        query = query.filter((User.is_headmaster == True) | (User.role == "head_teacher"))
     
     total = query.count()
     users = query.offset((page - 1) * page_size).limit(page_size).all()
@@ -439,6 +477,7 @@ def admin_get_user_stats(
             "role": user.role,
             "is_headmaster": user.is_headmaster or user.role == "head_teacher",
             "is_verified": user.is_verified or False,
+            "view_scope": user.view_scope or "",
             "signed_count": signed,
             "late_count": late,
             "absent_count": absent,
@@ -515,36 +554,28 @@ def principal_get_dashboard(
     username = str(current_user.username).strip().lower()
     employee_id = str(current_user.employee_id).strip().lower() if getattr(current_user, 'employee_id', None) else ""
     
-    is_xz001 = (username == "xz001" or employee_id == "xz001")
-    is_xz002 = (username == "xz002" or employee_id == "xz002")
-    
-    # 允许特定账号或具备特定角色的用户访问
-    whitelisted = ["xz001", "xz002", "T15229628942"]
-    is_test = (username in whitelisted) or (employee_id in whitelisted)
-    is_authorized = (current_user.role in ["admin", "principal"]) or is_test or (current_user.view_scope == "all")
+    # 允许特定权限的用户访问
+    is_authorized = (current_user.role in ["admin", "principal"]) or (current_user.view_scope in ["all", "head_teacher", "subject_teacher"])
     
     if not is_authorized:
-        # 如果是班主任身份，且试图看班主任看板，也允许
-        if current_user.view_scope == "head_teacher" or current_user.role == "head_teacher":
-            is_authorized = True
-        else:
-            raise HTTPException(status_code=403, detail="无权访问数据看板")
+        raise HTTPException(status_code=403, detail="无权访问数据看板")
 
     # 2. 确定视角与标题
     dashboard_title = "清涧中学签到数据看板"
     force_headmaster_view = False
     
-    # 逻辑：xz001 看全景，xz002 或 具备班主任视角的看班主任专版
-    if is_xz001:
+    # 逻辑：view_scope 为 all 看全景，head_teacher 看班主任专版，subject_teacher 看科任老师专版
+    if current_user.view_scope == "all":
         dashboard_title = "清涧中学签到数据看板"
         force_headmaster_view = False
-    elif is_xz002:
+    elif current_user.view_scope == "head_teacher":
         dashboard_title = "清涧中学班主任签到数据看板"
         force_headmaster_view = True
-    elif current_user.view_scope == "head_teacher" or current_user.role == "head_teacher":
-        dashboard_title = "清涧中学班主任签到数据看板"
-        force_headmaster_view = True
-    else:
+    elif current_user.view_scope == "subject_teacher":
+        dashboard_title = "清涧中学科任老师签到数据看板"
+        force_headmaster_view = False
+        force_subject_teacher_view = True
+    elif current_user.role in ["admin", "principal"]:
         # 默认全景 (admin/principal)
         dashboard_title = "清涧中学签到数据看板"
         force_headmaster_view = False
@@ -572,9 +603,12 @@ def principal_get_dashboard(
             end_date = checkin_date
 
         # 4. 确定用户范围
+        force_subject_teacher_view = current_user.view_scope == "subject_teacher"
         user_query = db.query(User).filter(User.is_active == True)
         if force_headmaster_view:
             user_query = user_query.filter(User.is_headmaster == True)
+        elif force_subject_teacher_view:
+            user_query = user_query.filter(User.is_headmaster == False)
         
         # 排除管理员和当前用户
         teachers = user_query.filter(User.role != "admin", User.id != current_user.id).all()
@@ -675,8 +709,6 @@ def principal_get_dashboard(
                 "role": current_user.role,
                 "view_scope": current_user.view_scope,
                 "vis": dashboard_title,
-                "is_xz001": is_xz001,
-                "is_xz002": is_xz002,
                 "force_headmaster": force_headmaster_view,
                 "teacher_count": len(teachers)
             }

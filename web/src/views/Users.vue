@@ -1,8 +1,17 @@
 <template>
   <div class="fade-in">
     <div class="page-header">
-      <h2>用户管理</h2>
-      <div class="description">权限和管理签到用户账号状态</div>
+      <div class="header-content">
+        <h2>用户管理</h2>
+        <div class="description">权限和管理签到用户账号状态</div>
+      </div>
+      <div class="admin-top-card" v-if="adminAccount">
+        <div class="admin-info">
+          <el-icon><Avatar /></el-icon>
+          <span class="admin-name">系统管理员: {{ adminAccount.real_name || 'admin' }}</span>
+        </div>
+        <el-button type="danger" size="small" plain @click="openEditDialog(adminAccount)">修改密码/资料</el-button>
+      </div>
     </div>
 
     <!-- 统计卡片 -->
@@ -70,7 +79,14 @@
             <el-switch v-model="row.is_headmaster" @change="toggleHeadmaster(row)" :loading="row._loading" />
           </template>
         </el-table-column>
-        <el-table-column label="操作" width="120" fixed="right">
+        <el-table-column label="看板范围" min-width="100">
+          <template #default="{ row }">
+            <el-tag :type="row.view_scope === 'all' ? 'success' : (row.view_scope === 'head_teacher' ? 'warning' : (row.view_scope === 'subject_teacher' ? 'primary' : 'info'))">
+              {{ row.view_scope === 'all' ? '全校' : (row.view_scope === 'head_teacher' ? '班主任' : (row.view_scope === 'subject_teacher' ? '科任教师' : '无')) }}
+            </el-tag>
+          </template>
+        </el-table-column>
+        <el-table-column label="操作" width="220" fixed="right">
           <template #default="{ row }">
             <el-button size="small" type="primary" link @click="openEditDialog(row)">编辑</el-button>
             <el-popconfirm title="确定解绑此用户的微信?" @confirm="unbindWx(row)">
@@ -141,6 +157,14 @@
             <el-option label="管理员" value="admin" />
           </el-select>
         </el-form-item>
+        <el-form-item label="看板权限">
+          <el-select v-model="userForm.view_scope" placeholder="请选择查看范围" clearable>
+            <el-option label="无" value="" />
+            <el-option label="全校数据" value="all" />
+            <el-option label="班主任数据" value="head_teacher" />
+            <el-option label="科任教师" value="subject_teacher" />
+          </el-select>
+        </el-form-item>
       </el-form>
       <template #footer>
         <el-button @click="showAddDialog = false">取消</el-button>
@@ -162,6 +186,14 @@
         </el-form-item>
         <el-form-item label="部门">
           <el-input v-model="userForm.department" placeholder="请输入部门" />
+        </el-form-item>
+        <el-form-item label="看板权限">
+          <el-select v-model="userForm.view_scope" placeholder="请选择查看范围" clearable>
+            <el-option label="无" value="" />
+            <el-option label="全校数据" value="all" />
+            <el-option label="班主任数据" value="head_teacher" />
+            <el-option label="科任教师" value="subject_teacher" />
+          </el-select>
         </el-form-item>
         <el-form-item label="角色">
           <el-select v-model="userForm.role" placeholder="请选择角色">
@@ -185,12 +217,13 @@
 <script setup>
 import { ref, reactive, onMounted } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
-import { Refresh, Plus } from '@element-plus/icons-vue'
+import { Refresh, Plus, Avatar, Edit } from '@element-plus/icons-vue'
 import { userApi } from '../api'
 
 const loading = ref(false)
 const saving = ref(false)
 const users = ref([])
+const adminAccount = ref(null)
 const stats = ref({})
 const filters = reactive({ role: null })
 const pagination = reactive({ page: 1, pageSize: 100, total: 0 })
@@ -206,7 +239,8 @@ const userForm = reactive({
   password: '',
   new_password: '',
   department: '',
-  role: 'teacher'
+  role: 'teacher',
+  view_scope: ''
 })
 
 function roleLabel(role) {
@@ -229,11 +263,13 @@ async function loadData() {
   loading.value = true
   try {
     const usersData = await userApi.list({ page: pagination.page, page_size: pagination.pageSize, role: filters.role })
-    users.value = usersData.items?.map(u => ({ 
-      ...u, 
-      real_name: u.real_name || u.name,
-      _loading: false 
-    })) || usersData.map(u => ({ 
+    const allItems = usersData.items || (Array.isArray(usersData) ? usersData : [])
+    
+    // 分离出 admin 账号
+    adminAccount.value = allItems.find(u => u.username === 'admin')
+    
+    // 过滤掉列表中的 admin
+    users.value = allItems.filter(u => u.username !== 'admin').map(u => ({ 
       ...u, 
       real_name: u.real_name || u.name,
       _loading: false 
@@ -260,16 +296,13 @@ async function loadUsers() {
   loading.value = true
   try {
     const usersData = await userApi.list({ page: pagination.page, page_size: pagination.pageSize, role: filters.role })
-    users.value = usersData.items?.map(u => ({ 
-      ...u, 
-      real_name: u.real_name || u.name,
-      _loading: false 
-    })) || usersData.map(u => ({ 
+    const allItems = usersData.items || (Array.isArray(usersData) ? usersData : [])
+    users.value = allItems.filter(u => u.username !== 'admin').map(u => ({ 
       ...u, 
       real_name: u.real_name || u.name,
       _loading: false 
     }))
-    pagination.total = 144 // 实际用户数，后端API限制100条
+    pagination.total = usersData.total || 144
   } catch (e) {
     console.error('Load users error:', e)
   } finally {
@@ -312,7 +345,8 @@ function openAddDialog() {
     password: '',
     new_password: '',
     department: '',
-    role: 'teacher'
+    role: 'teacher',
+    view_scope: ''
   })
   showAddDialog.value = true
 }
@@ -327,7 +361,8 @@ function openEditDialog(user) {
     password: '',
     new_password: '',
     department: user.department || '',
-    role: user.role
+    role: user.role,
+    view_scope: user.view_scope || ''
   })
   showEditDialog.value = true
 }
@@ -362,6 +397,7 @@ async function updateUser() {
       nickname: userForm.nickname,
       department: userForm.department,
       role: userForm.role,
+      view_scope: userForm.view_scope,
       new_password: userForm.new_password || undefined
     })
     ElMessage.success('用户更新成功')
@@ -435,6 +471,35 @@ onMounted(loadData)
   margin-top: 20px;
   display: flex;
   justify-content: flex-end;
+}
+
+.page-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 24px;
+}
+
+.admin-top-card {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  background: rgba(245, 108, 108, 0.05);
+  border: 1px solid rgba(245, 108, 108, 0.2);
+  padding: 8px 16px;
+  border-radius: 12px;
+}
+
+.admin-info {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: #f56c6c;
+  font-weight: bold;
+}
+
+.admin-name {
+  font-size: 14px;
 }
 
 .nowrap {

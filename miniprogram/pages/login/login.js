@@ -30,24 +30,17 @@ Page({
 
     wx.showLoading({ title: '正在登录...' });
 
-    // 1. 获取微信 login code 用于 OpenID 绑定 (安全加固)
-    // 对于测试账号 xz001/xz002，无需进行微信绑定，直接进行工号密码验证
-    const isTestAccount = (employeeId.trim().toLowerCase() === 'xz001' || employeeId.trim().toLowerCase() === 'xz002');
-
-    if (isTestAccount) {
-      this._doLogin(employeeId.trim(), password, null);
-    } else {
-      wx.login({
-        success: (res) => {
-          this._doLogin(employeeId.trim(), password, res.code);
-        },
-        fail: (err) => {
-          wx.hideLoading();
-          wx.showToast({ title: '微信服务不可用，请稍后重试', icon: 'none' });
-          console.error('wx.login fail', err);
-        }
-      });
-    }
+    // 获取微信 login code 用于 OpenID 绑定 (安全加固)
+    wx.login({
+      success: (res) => {
+        this._doLogin(employeeId.trim(), password, res.code);
+      },
+      fail: (err) => {
+        wx.hideLoading();
+        wx.showToast({ title: '微信服务不可用，请稍后重试', icon: 'none' });
+        console.error('wx.login fail', err);
+      }
+    });
   },
 
   /** 统一处理登录请求 */
@@ -65,7 +58,7 @@ Page({
         wx.showToast({ title: '登录成功', icon: 'success' });
         setTimeout(() => {
           // 根据角色跳转 (如果是后端返回的 admin 或 principal 也可以跳看板)
-          const isManager = ['admin', 'principal'].includes(res.user.role);
+          const isManager = ['admin', 'principal'].includes(res.user.role) || ['all', 'head_teacher', 'subject_teacher'].includes(res.user.view_scope);
           const url = isManager
             ? '/packageAdmin/pages/checkin_dashboard/checkin_dashboard'
             : '/pages/index/index';
