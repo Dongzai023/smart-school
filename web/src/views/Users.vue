@@ -294,9 +294,9 @@ async function loadData() {
     
     // 计算统计数据
     stats.value = {
-      total_users: statsOverview.total_users || usersData.total || allUsers.length,
-      active_users: allUsers.filter(u => u.is_active !== false).length,
-      can_scan_unlock: allUsers.filter(u => u.is_verified === true).length,
+      total_users: statsOverview.total_users || 0,
+      active_users: statsOverview.active_users || 0,
+      can_scan_unlock: statsOverview.verified_users || 0,
       today_checkins: statsOverview.signed_today || 0
     }
     pagination.total = usersData.total || 145
@@ -320,11 +320,10 @@ async function loadUsers() {
     
     // 更新统计数据 (同步更新)
     const statsOverview = await userApi.getStatsOverview({ role: filters.role })
-    const allUsers = users.value
     stats.value = {
-      total_users: statsOverview.total_users || usersData.total || allUsers.length,
-      active_users: allUsers.filter(u => u.is_active !== false).length,
-      can_scan_unlock: allUsers.filter(u => u.is_verified === true).length,
+      total_users: statsOverview.total_users || 0,
+      active_users: statsOverview.active_users || 0,
+      can_scan_unlock: statsOverview.verified_users || 0,
       today_checkins: statsOverview.signed_today || 0
     }
     
