@@ -82,7 +82,11 @@ Page({
                     statusText: this.getStatusText(u),
                     statusClass: this.data.type === 'total' ? 'normal' : (this.data.type === 'all' ? 'normal' : this.data.type)
                 };
-            }).sort((a, b) => (b.record_count || 0) - (a.record_count || 0));
+            }).sort((a, b) => {
+                if (this.data.type === 'late') return (b.late_count || 0) - (a.late_count || 0);
+                if (this.data.type === 'absent') return (b.absent_count || 0) - (a.absent_count || 0);
+                return (b.record_count || 0) - (a.record_count || 0);
+            });
 
             this.setData({ users }, () => this.filterUsers());
             if (cb) cb();
@@ -93,11 +97,11 @@ Page({
     },
 
     getStatusText(user) {
-        const count = user.record_count || 0;
         if (this.data.type === 'normal') return '正常';
-        if (this.data.type === 'late') return `迟到 ${count} 次`;
-        if (this.data.type === 'absent') return '缺勤';
+        if (this.data.type === 'late') return `迟到 ${user.late_count || 0} 次`;
+        if (this.data.type === 'absent') return `缺勤 ${user.absent_count || 0} 次`;
         if (this.data.type === 'leave') return '请假';
+        const count = user.record_count || 0;
         if (this.data.type === 'total' || this.data.type === 'all') return `签到 ${count} 次`;
         return '正常';
     },
