@@ -49,7 +49,8 @@ Page({
             'signed': { text: '正常', cls: 'normal' },
             'normal': { text: '正常', cls: 'normal' },
             'late': { text: '迟到', cls: 'late' },
-            'absent': { text: '缺勤', cls: 'absent' }
+            'absent': { text: '缺勤', cls: 'absent' },
+            'pending': { text: '待打卡', cls: 'pending' }
         };
         api.getStatsRecords(50, userId, period).then(res => {
             const records = (res.records || []).map(r => {

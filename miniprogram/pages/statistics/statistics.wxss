@@ -717,6 +717,11 @@ page {
   background: linear-gradient(135deg, #FF2056 0%, #EC003F 100%);
   box-shadow: 0 8rpx 30rpx rgba(0, 0, 0, 0.1);
 }
+ 
+.date-gray {
+  background: linear-gradient(135deg, #F1F5F9 0%, #E2E8F0 100%);
+  box-shadow: 0 8rpx 30rpx rgba(0, 0, 0, 0.1);
+}
 
 .record-day {
   font-size: 48rpx;
@@ -778,6 +783,12 @@ page {
   background: #FFE4E6;
   border: 1rpx solid #FFCCD3;
   color: #C70036;
+}
+ 
+.status-pending {
+  background: #F1F5F9;
+  border: 1rpx solid #E2E8F0;
+  color: #94A3B8;
 }
 
 .record-detail {

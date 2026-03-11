@@ -184,14 +184,14 @@
     
     <view class="record-list">
       <view wx:for="{{recentRecords}}" wx:key="date" class="record-item">
-        <view class="record-date date-{{item.status === 'normal' ? 'green' : (item.status === 'late' ? 'orange' : 'red')}}">
+        <view class="record-date date-{{item.status === 'normal' ? 'green' : (item.status === 'late' ? 'orange' : (item.status === 'pending' ? 'gray' : 'red'))}}">
           <text class="record-day">{{item.day}}</text>
           <text class="record-month">{{item.month}}</text>
         </view>
         <view class="record-info">
           <view class="record-header">
             <text class="record-date-text">{{item.date}}</text>
-            <view class="record-status status-{{item.status}}">{{item.status === 'normal' ? '正常' : (item.status === 'late' ? '迟到' : '缺勤')}}</view>
+            <view class="record-status status-{{item.status}}">{{item.status === 'normal' ? '正常' : (item.status === 'late' ? '迟到' : (item.status === 'pending' ? '待打卡' : '缺勤'))}}</view>
           </view>
           <view class="record-detail">
             <view class="record-time-wrap" wx:if="{{item.first_checkin_time}}">

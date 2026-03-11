@@ -109,22 +109,57 @@ def get_overview(
     
     actual_valid = sum(1 for r in dedup_records if r.status in ("signed", "normal", "late"))
     
-    # 缺勤计算：以时段为单位，以便和下方详情打卡记录保持完全一致
+    # ========================================================
+    # 核心修正：统一“总数/应到”判定逻辑
+    # 一个时段被认为是“应到”的条件：
+    # 1. 它是工作日且时间已过/已开始
+    # 2. 或者该时段已经有了实际打卡记录（兼容加班/早到）
+    # ========================================================
     now = datetime.now()
+    past_expected_slots = 0
+    signed_count = 0
+    late_count = 0
+    
+    # 预先获取所有记录的日期时段集合以便判断
+    record_keys = {(r.checkin_date, r.time_slot_id) for r in dedup_records if r.status in ("signed", "normal", "late")}
+    
     if period == "session":
-        absent_count = 0 if actual_valid > 0 else (1 if current_slot else 0)
-        past_expected_slots = 1 if current_slot else 0
+        # 本次时段逻辑
+        if current_slot:
+            is_expected = False
+            # 条件1：工作日且时间已过 (session 模式下 current_slot 必然是当前/已开始)
+            if date.today().weekday() < 5:
+                is_expected = True
+            # 条件2：已有打卡记录
+            if (date.today(), current_slot["id"]) in record_keys:
+                is_expected = True
+            
+            if is_expected:
+                past_expected_slots = 1
     else:
-        past_expected_slots = 0
+        # 周期逻辑
         for i in range((end_date - start_date).days + 1):
             d = start_date + timedelta(days=i)
-            if d.weekday() < 5:
-                for s in slots:
+            if d > now.date(): continue
+            
+            for s in slots:
+                is_expected = False
+                # 条件1：工作日且时间已过
+                if d.weekday() < 5:
                     if d < now.date() or (d == now.date() and now.time() >= s["start"]):
-                        past_expected_slots += 1
-        absent_count = max(0, past_expected_slots - actual_valid)
+                        is_expected = True
+                # 条件2：已有打卡记录
+                if (d, s["id"]) in record_keys:
+                    is_expected = True
+                
+                if is_expected:
+                    past_expected_slots += 1
+
+    signed_count = sum(1 for r in dedup_records if r.status in ("signed", "normal"))
+    late_count = sum(1 for r in dedup_records if r.status == "late")
+    absent_count = max(0, past_expected_slots - (signed_count + late_count))
     
-    expected_total = past_expected_slots # 重塑基数供出勤率计算，避免出现不可控的错误率
+    expected_total = past_expected_slots
     
     # 出勤率：(正常+迟到) / 总应签
     attendance_rate = 0
@@ -358,11 +393,23 @@ def get_records(
             slot_id = slot["id"]
             slot_label = slot["label"]
             rec = record_by_slot.get(slot_id)
+            rec = record_by_slot.get(slot_id)
             if rec:
                 slot_status = rec.status
                 slot_time = rec.checkin_time.strftime("%H:%M") if rec.checkin_time else "--:--"
             else:
-                slot_status = "absent"
+                # 核心逻辑：判断是否是“缺勤”还是“待打卡”
+                now = datetime.now()
+                is_expected = False
+                # 判定为应到（缺勤）的条件
+                if d.weekday() < 5:
+                    if d < now.date() or (d == now.date() and now.time() >= slot["start"]):
+                        is_expected = True
+                
+                if is_expected:
+                    slot_status = "absent"
+                else:
+                    slot_status = "pending" # 待打卡 / 非工作日
                 slot_time = None
             slot_details.append({
                 "label": slot_label,
@@ -773,30 +820,46 @@ def principal_get_dashboard(
             has_late = any(r.status == "late" for r in dedup_records)
             has_signed = any(r.status in ("signed", "normal", "late") for r in dedup_records)
 
-            # 通过日期集合计算缺勤，修正以时段计算
+            # 核心修正：统一校长看板统计逻辑
+            period_signed = 0
+            period_late = 0
+            period_expected = 0
+            
+            # 一个时段被认为是“应到”的条件：
+            # 1. 它是工作日且时间已过/已开始
+            # 2. 或者该时段已经有了实际打卡记录
+            t_record_keys = {(r.checkin_date, r.time_slot_id) for r in t_records if r.status in ("signed", "normal", "late")}
+            
             if is_session_mode:
-                calc_absent = 1 if (current_slot and not has_signed) else 0
-                past_expected_slots = 1 if current_slot else 0
+                if current_slot:
+                    is_expected = False
+                    if checkin_date.weekday() < 5: is_expected = True
+                    if (checkin_date, current_slot["id"]) in t_record_keys: is_expected = True
+                    if is_expected: period_expected = 1
             else:
-                past_expected_slots = 0
                 for i in range((end_date - start_date).days + 1):
                     d = start_date + timedelta(days=i)
-                    if d.weekday() < 5:
-                        for s in teacher_slots:
-                            if d < now.date() or (d == now.date() and now.time() >= s["start"]): 
-                                past_expected_slots += 1
+                    if d > now.date(): continue
+                    for s in teacher_slots:
+                        is_expected = False
+                        if d.weekday() < 5:
+                            if d < now.date() or (d == now.date() and now.time() >= s["start"]):
+                                is_expected = True
+                        if (d, s["id"]) in t_record_keys: is_expected = True
+                        if is_expected: period_expected += 1
 
-            actual_valid_count = sum(1 for r in dedup_records if r.status in ("signed", "normal", "late"))
-            calc_absent = max(0, past_expected_slots - actual_valid_count)
+            period_signed = sum(1 for r in t_records if r.status in ("signed", "normal"))
+            period_late = sum(1 for r in t_records if r.status == "late")
+            period_absent = max(0, period_expected - (period_signed + period_late))
 
             teacher_info_period = teacher_info_base.copy()
-            teacher_info_period["record_count"] = len(dedup_records)
-            teacher_info_period["normal_count"] = sum(1 for r in dedup_records if r.status in ("signed", "normal"))
-            teacher_info_period["late_count"] = sum(1 for r in dedup_records if r.status == "late")
-            teacher_info_period["absent_count"] = calc_absent
+            teacher_info_period["record_count"] = period_signed + period_late
+            teacher_info_period["normal_count"] = period_signed
+            teacher_info_period["late_count"] = period_late
+            teacher_info_period["absent_count"] = period_absent
 
-            has_absent = calc_absent > 0
-            has_late = any(r.status == "late" for r in dedup_records)
+            has_absent = period_absent > 0
+            has_late = period_late > 0
 
             # 调试日志：打印每个用户的记录信息
             if dedup_records and any(r.status == "late" for r in dedup_records):

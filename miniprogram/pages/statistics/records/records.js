@@ -54,7 +54,7 @@ Page({
         api.getStatsOverview('month').then(res => {
             this.setData({
                 stats: {
-                    total: (res.signed_count || 0) + (res.late_count || 0) + (res.absent_count || 0),
+                    total: res.total_count || 0,
                     normal: res.signed_count || 0,
                     late: res.late_count || 0,
                     absent: res.absent_count || 0
@@ -74,7 +74,8 @@ Page({
             'signed': { text: '正常', cls: 'normal' },
             'normal': { text: '正常', cls: 'normal' },
             'late': { text: '迟到', cls: 'late' },
-            'absent': { text: '缺勤', cls: 'absent' }
+            'absent': { text: '缺勤', cls: 'absent' },
+            'pending': { text: '待打卡', cls: 'pending' }
         };
 
         // Fetching records. PageSize set to 50 for "View All"

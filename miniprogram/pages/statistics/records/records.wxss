@@ -305,6 +305,12 @@
   border-color: #FECACA;
 }
 .rislot.absent .rislot-time { color: #991b1b; }
+ 
+.rislot.pending {
+  background: #F1F5F9;
+  border-color: #E2E8F0;
+}
+.rislot.pending .rislot-time { color: #94A3B8; }
 
 /* Empty & Loading */
 .empty-state, .loading-state {
