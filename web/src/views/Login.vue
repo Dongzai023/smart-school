@@ -4,7 +4,7 @@
       <div class="login-card">
         <div class="login-header">
           <div class="login-icon">🖥️</div>
-          <h1>希沃一体机管理系统</h1>
+          <h1>海亮·清中智慧校园系统</h1>
           <p>Seewo Interactive Panel Manager</p>
         </div>
         <el-form :model="form" @submit.prevent="handleLogin" class="login-form">

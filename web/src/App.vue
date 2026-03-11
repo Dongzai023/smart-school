@@ -6,7 +6,7 @@
     <!-- Sidebar -->
     <aside class="sidebar">
       <div class="sidebar-header">
-        <h1>清涧中学</h1>
+        <h1>海亮教育·清涧中学</h1>
         <div class="subtitle">Smart Campus Manager</div>
       </div>
       <nav class="sidebar-nav">
