@@ -748,32 +748,48 @@ def principal_get_dashboard(
             else:
                 records_for_stats = t_records
 
-            # 核心修复：添加各类统计数值，以便前端显示详细次数
+            dedup_records = []
+            seen_slots = set()
+            for r in records_for_stats:
+                key = (r.checkin_date, r.time_slot_id)
+                if key not in seen_slots:
+                    seen_slots.add(key)
+                    dedup_records.append(r)
+
+            past_expected_slots = 0
+            if is_session_mode:
+                past_expected_slots = 1 if current_slot else 0
+            else:
+                for i in range((end_date - start_date).days + 1):
+                    d = start_date + timedelta(days=i)
+                    if d.weekday() < 5:
+                        for s in teacher_slots:
+                            if d < now.date() or (d == now.date() and now.time() >= s["start"]): 
+                                past_expected_slots += 1
+
+            actual_valid_count = sum(1 for r in dedup_records if r.status in ("signed", "normal", "late"))
+            calc_absent = max(0, past_expected_slots - actual_valid_count)
+
             teacher_info_period = teacher_info_base.copy()
-            teacher_info_period["record_count"] = period_count
-            teacher_info_period["normal_count"] = sum(1 for r in records_for_stats if r.status in ("signed", "normal"))
-            teacher_info_period["late_count"] = sum(1 for r in records_for_stats if r.status == "late")
-            teacher_info_period["absent_count"] = sum(1 for r in records_for_stats if r.status == "absent")
+            teacher_info_period["record_count"] = len(dedup_records)
+            teacher_info_period["normal_count"] = sum(1 for r in dedup_records if r.status in ("signed", "normal"))
+            teacher_info_period["late_count"] = sum(1 for r in dedup_records if r.status == "late")
+            teacher_info_period["absent_count"] = calc_absent
+
+            has_absent = calc_absent > 0
+            has_late = any(r.status == "late" for r in dedup_records)
 
             # 调试日志：打印每个用户的记录信息
-            if records_for_stats and any(r.status == "late" for r in records_for_stats):
-                logger.info(f"User {t.real_name} (ID: {t.id}): total_records={len(records_for_stats)}, late_count={teacher_info_period['late_count']}, records={[(r.status, str(r.checkin_date)) for r in records_for_stats]}")
-
-            if is_session_mode or period == "today":
-                # 核心修复：调整状态优先级，如果有迟到则优先标记为迟到
-                has_late = any(r.status == "late" for r in t_records)
-                has_signed = any(r.status in ("signed", "normal") for r in t_records)
-                
-                if has_late: categories["late"].append(teacher_info_period)
-                elif has_signed: categories["normal"].append(teacher_info_period)
-                else: categories["absent"].append(teacher_info_period)
+            if dedup_records and any(r.status == "late" for r in dedup_records):
+                logger.info(f"User {t.real_name} (ID: {t.id}): total_records={len(dedup_records)}, late_count={teacher_info_period['late_count']}")
+            
+            if has_absent:
+                categories["absent"].append(teacher_info_period)
+            elif has_late:
+                categories["late"].append(teacher_info_period)
             else:
-                # 周期模式 (week/month 等)，只要有缺勤就进异常名单优先
-                has_absent = any(r.status == "absent" for r in t_records)
-                has_late = any(r.status == "late" for r in t_records)
-                if not t_records or has_absent: categories["absent"].append(teacher_info_period)
-                elif has_late: categories["late"].append(teacher_info_period)
-                else: categories["normal"].append(teacher_info_period)
+                categories["normal"].append(teacher_info_period)
+
 
         # 按累计签到次数从高到低排列"查看全部"列表
         categories["total"].sort(key=lambda x: x["record_count"], reverse=True)
