@@ -3,7 +3,7 @@
 from datetime import datetime, date, timedelta
 from fastapi import APIRouter, Depends, Query, HTTPException
 from sqlalchemy.orm import Session
-from sqlalchemy import func
+from sqlalchemy import func, or_
 
 from app.database import get_db
 from app.models.user import User
@@ -73,21 +73,36 @@ def get_overview(
     slot_count = len(slots)
     
     # 2. 查询该时段内所有签到记录
-    records = db.query(CheckinRecord).filter(
+    records_query = db.query(CheckinRecord).filter(
         CheckinRecord.user_id == target_user_id,
         CheckinRecord.checkin_date >= start_date,
         CheckinRecord.checkin_date <= end_date
-    ).all()
+    )
+    
+    # 获取当次时段 (如果是 session 模式)
+    current_slot = None
+    if period == "session":
+        now_time_obj = datetime.now().time()
+        # 获取基础时段配置来确定 session
+        base_slots = get_user_time_slots(False)
+        for s in reversed(base_slots):
+            if now_time_obj >= s["start"]:
+                current_slot = s
+                break
+        if not current_slot: current_slot = base_slots[0]
+        
+        # 核心修复：session 模式下只看当前时段的记录
+        records_query = records_query.filter(CheckinRecord.time_slot_id == current_slot["id"])
+        
+    records = records_query.all()
     
     signed_count = sum(1 for r in records if r.status in ("signed", "normal"))
     late_count = sum(1 for r in records if r.status == "late")
     
     # 3. 计算应签到次数并推算缺勤
     if period == "session":
-        # 如果是 session 模式，应签到次数取决于当前已经过去的时段
-        now_time = datetime.now().time()
-        now_minutes = now_time.hour * 60 + now_time.minute
-        expected_total = sum(1 for s in slots if (s["start"].hour * 60 + s["start"].minute) <= now_minutes)
+        # session 模式下，应签到次数就是 1 (即当前这一个时段)
+        expected_total = 1
     else:
         # 工作日天数 * 时段数
         work_days = sum(1 for i in range((end_date - start_date).days + 1)
@@ -615,9 +630,9 @@ def principal_get_dashboard(
         force_subject_teacher_view = current_user.view_scope == "subject_teacher"
         user_query = db.query(User).filter(User.is_active == True)
         if force_headmaster_view:
-            user_query = user_query.filter(User.is_headmaster == True)
+            user_query = user_query.filter(or_(User.is_headmaster == True, User.role == "head_teacher"))
         elif force_subject_teacher_view:
-            user_query = user_query.filter(User.is_headmaster == False)
+            user_query = user_query.filter(User.is_headmaster == False, User.role != "head_teacher")
         
         # 排除管理员和当前用户
         teachers = user_query.filter(User.role != "admin", User.id != current_user.id).all()
@@ -630,7 +645,7 @@ def principal_get_dashboard(
                 "session_label": None,
                 "date_range": f"{start_date.isoformat()} ~ {end_date.isoformat()}",
                 "summary": {"total": 0, "normal_count": 0, "late_count": 0, "absent_count": 0, "leave_count": 0, "rate": 0},
-                "categories": {"normal": [], "late": [], "absent": []},
+                "categories": {"normal": [], "late": [], "absent": [], "total": []},
                 "debug_user": {
                     "u": username,
                     "e": employee_id,
@@ -644,7 +659,7 @@ def principal_get_dashboard(
             CheckinRecord.checkin_date >= start_date,
             CheckinRecord.checkin_date <= end_date
         )
-        
+
         current_slot = None
         if is_session_mode:
             from datetime import datetime
@@ -655,7 +670,7 @@ def principal_get_dashboard(
                     current_slot = s
                     break
             if not current_slot: current_slot = slots[0]
-            
+
             records_query = records_query.filter(
                 CheckinRecord.checkin_date == checkin_date,
                 CheckinRecord.time_slot_id == current_slot["id"]
@@ -667,32 +682,87 @@ def principal_get_dashboard(
             if r.user_id not in record_map: record_map[r.user_id] = []
             record_map[r.user_id].append(r)
 
-        # 6. 分类聚合
-        categories = {"normal": [], "late": [], "absent": []}
+        # 核心修复：对于 session/today 模式，获取今日所有时段的记录以计算准确的迟到次数
+        if is_session_mode or period == "today":
+            all_today_records = db.query(CheckinRecord).filter(
+                CheckinRecord.user_id.in_(teacher_ids),
+                CheckinRecord.checkin_date == checkin_date
+            ).all()
+            all_today_map = {}
+            for r in all_today_records:
+                if r.user_id not in all_today_map: all_today_map[r.user_id] = []
+                all_today_map[r.user_id].append(r)
+        else:
+            all_today_map = None
+
+        # 6. 获取累计总签到次数 (用于"查看全部"列表)
+        lifetime_counts = db.query(
+            CheckinRecord.user_id,
+            func.count(CheckinRecord.id).label("total_cnt")
+        ).filter(
+            CheckinRecord.user_id.in_(teacher_ids),
+            CheckinRecord.status.in_(["signed", "normal", "late"])
+        ).group_by(CheckinRecord.user_id).all()
+        lifetime_map = {r.user_id: r.total_cnt for r in lifetime_counts}
+
+        # 7. 分类聚合
+        categories = {"normal": [], "late": [], "absent": [], "total": []}
         for t in teachers:
             t_records = record_map.get(t.id, [])
-            teacher_info = {
+            # 这里的 record_count 是当前周期内的次数
+            period_count = len(t_records)
+            # 这里的 lifetime_count 是所有时间的次数 (用于排序和列表展示)
+            lifetime_count = lifetime_map.get(t.id, 0)
+
+            teacher_info_base = {
                 "id": t.id,
                 "real_name": t.real_name,
                 "nickname": t.nickname,
                 "avatar_url": t.avatar_url,
                 "department": t.department or "校办公室",
                 "is_headmaster": t.is_headmaster,
-                "record_count": len(t_records)
             }
 
+            # 添加到"查看全部"分类，使用累计次数
+            teacher_info_total = teacher_info_base.copy()
+            teacher_info_total["record_count"] = lifetime_count
+            categories["total"].append(teacher_info_total)
+
+            # 核心修复：对于 session/today 模式，使用今日所有时段的记录计算迟到次数
             if is_session_mode or period == "today":
-                has_signed = any(r.status in ("signed", "normal") for r in t_records)
-                has_late = any(r.status == "late" for r in t_records)
-                if has_signed: categories["normal"].append(teacher_info)
-                elif has_late: categories["late"].append(teacher_info)
-                else: categories["absent"].append(teacher_info)
+                records_for_stats = all_today_map.get(t.id, [])
             else:
+                records_for_stats = t_records
+
+            # 核心修复：添加各类统计数值，以便前端显示详细次数
+            teacher_info_period = teacher_info_base.copy()
+            teacher_info_period["record_count"] = period_count
+            teacher_info_period["normal_count"] = sum(1 for r in records_for_stats if r.status in ("signed", "normal"))
+            teacher_info_period["late_count"] = sum(1 for r in records_for_stats if r.status == "late")
+            teacher_info_period["absent_count"] = sum(1 for r in records_for_stats if r.status == "absent")
+
+            # 调试日志：打印每个用户的记录信息
+            if records_for_stats and any(r.status == "late" for r in records_for_stats):
+                logger.info(f"User {t.real_name} (ID: {t.id}): total_records={len(records_for_stats)}, late_count={teacher_info_period['late_count']}, records={[(r.status, str(r.checkin_date)) for r in records_for_stats]}")
+
+            if is_session_mode or period == "today":
+                # 核心修复：调整状态优先级，如果有迟到则优先标记为迟到
+                has_late = any(r.status == "late" for r in t_records)
+                has_signed = any(r.status in ("signed", "normal") for r in t_records)
+                
+                if has_late: categories["late"].append(teacher_info_period)
+                elif has_signed: categories["normal"].append(teacher_info_period)
+                else: categories["absent"].append(teacher_info_period)
+            else:
+                # 周期模式 (week/month 等)，只要有缺勤就进异常名单优先
                 has_absent = any(r.status == "absent" for r in t_records)
                 has_late = any(r.status == "late" for r in t_records)
-                if not t_records or has_absent: categories["absent"].append(teacher_info)
-                elif has_late: categories["late"].append(teacher_info)
-                else: categories["normal"].append(teacher_info)
+                if not t_records or has_absent: categories["absent"].append(teacher_info_period)
+                elif has_late: categories["late"].append(teacher_info_period)
+                else: categories["normal"].append(teacher_info_period)
+
+        # 按累计签到次数从高到低排列"查看全部"列表
+        categories["total"].sort(key=lambda x: x["record_count"], reverse=True)
 
         total_teachers = len(teachers)
         summary = {
@@ -701,7 +771,7 @@ def principal_get_dashboard(
             "late_count": len(categories["late"]),
             "absent_count": len(categories["absent"]),
             "leave_count": 0,
-            "rate": round(len(categories["normal"]) / total_teachers * 100, 1) if total_teachers else 0
+            "rate": round((len(categories["normal"]) + len(categories["late"])) / total_teachers * 100, 1) if total_teachers else 0
         }
 
         return {
