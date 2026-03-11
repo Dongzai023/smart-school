@@ -1,0 +1,361 @@
+/* Page Container */
+.page-container {
+  min-height: 100vh;
+  background: linear-gradient(180deg, #f8fafc 0%, #ffffff 100%);
+  display: flex;
+  flex-direction: column;
+}
+
+/* User Profile Header */
+.profile-header {
+  position: relative;
+  padding: 40rpx 32rpx 60rpx;
+  background: linear-gradient(135deg, #00BC7D 0%, #059669 100%);
+  overflow: hidden;
+}
+
+.ph-bg {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: radial-gradient(circle at 80% 20%, rgba(255, 255, 255, 0.15) 0%, transparent 60%);
+}
+
+.ph-content {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  align-items: center;
+  gap: 24rpx;
+}
+
+.phc-avatar-wrap {
+  position: relative;
+  width: 120rpx;
+  height: 120rpx;
+  flex-shrink: 0;
+}
+
+.phc-avatar {
+  width: 100%;
+  height: 100%;
+  border-radius: 50%;
+  border: 6rpx solid rgba(255, 255, 255, 0.3);
+  background: rgba(255, 255, 255, 0.1);
+  box-shadow: 0 8rpx 24rpx rgba(0, 0, 0, 0.15);
+}
+
+.phc-info {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 12rpx;
+}
+
+.phc-name {
+  font-size: 40rpx;
+  font-weight: 950;
+  color: #ffffff;
+  letter-spacing: 1rpx;
+}
+
+.phc-dept {
+  display: flex;
+  align-items: center;
+  gap: 8rpx;
+  background: rgba(255, 255, 255, 0.15);
+  backdrop-filter: blur(10rpx);
+  padding: 8rpx 20rpx;
+  border-radius: 20rpx;
+  align-self: flex-start;
+}
+
+.phcd-text {
+  font-size: 22rpx;
+  color: rgba(255, 255, 255, 0.95);
+  font-weight: 600;
+}
+
+/* Stats Summary */
+.stats-summary {
+  display: flex;
+  align-items: center;
+  background: #ffffff;
+  margin: -30rpx 24rpx 0;
+  border-radius: 24rpx;
+  padding: 28rpx 20rpx;
+  box-shadow: 0 8rpx 32rpx rgba(0, 188, 125, 0.15);
+  position: relative;
+  z-index: 2;
+}
+
+.ss-item {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8rpx;
+}
+
+.ssi-value {
+  font-size: 44rpx;
+  font-weight: 950;
+  color: #1e293b;
+  line-height: 1;
+}
+
+.ssi-value.success { color: #10b981; }
+.ssi-value.warning { color: #f59e0b; }
+.ssi-value.danger { color: #ef4444; }
+
+.ssi-label {
+  font-size: 20rpx;
+  color: #94a3b8;
+  font-weight: 600;
+}
+
+.ss-divider {
+  width: 2rpx;
+  height: 50rpx;
+  background: linear-gradient(180deg, transparent 0%, #e2e8f0 50%, transparent 100%);
+}
+
+/* Records Section */
+.records-section {
+  flex: 1;
+  padding: 32rpx 24rpx;
+}
+
+.rs-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-end;
+  margin-bottom: 24rpx;
+  padding: 0 8rpx;
+}
+
+.rs-title-wrap {
+  display: flex;
+  flex-direction: column;
+  gap: 4rpx;
+}
+
+.rsh-title {
+  font-size: 36rpx;
+  font-weight: 950;
+  color: #1e293b;
+  letter-spacing: 1rpx;
+}
+
+.rsh-subtitle {
+  font-size: 18rpx;
+  color: #94a3b8;
+  font-weight: 800;
+  letter-spacing: 2rpx;
+}
+
+.rsh-period {
+  font-size: 24rpx;
+  font-weight: 700;
+  color: #00BC7D;
+  background: #E6F9F2;
+  padding: 10rpx 24rpx;
+  border-radius: 20rpx;
+  display: flex;
+  align-items: center;
+  gap: 8rpx;
+}
+
+.arrow-down {
+  font-size: 16rpx;
+  opacity: 0.5;
+}
+
+/* Record List */
+.rs-list {
+  display: flex;
+  flex-direction: column;
+  gap: 20rpx;
+}
+
+.record-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 16rpx;
+}
+
+/* Left - Date */
+.ri-left {
+  width: 90rpx;
+  flex-shrink: 0;
+}
+
+.ril-date {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  background: linear-gradient(135deg, #f1f5f9 0%, #e2e8f0 100%);
+  padding: 12rpx;
+  border-radius: 16rpx;
+  box-shadow: 0 2rpx 6rpx rgba(0, 0, 0, 0.04);
+}
+
+.ril-datestr {
+  font-size: 26rpx;
+  font-weight: 900;
+  color: #475569;
+}
+
+.ril-weekday {
+  font-size: 20rpx;
+  color: #94a3b8;
+  font-weight: 600;
+  margin-top: 8rpx;
+  text-align: center;
+}
+
+/* Center - Line */
+.ri-center {
+  width: 4rpx;
+  align-self: stretch;
+  position: relative;
+  display: flex;
+  justify-content: center;
+}
+
+.ric-line {
+  width: 2rpx;
+  height: 100%;
+  background: #e2e8f0;
+  position: relative;
+}
+
+.ric-dot {
+  position: absolute;
+  top: 24rpx;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 12rpx;
+  height: 12rpx;
+  border-radius: 50%;
+  background: #cbd5e1;
+  border: 4rpx solid #ffffff;
+}
+
+.ric-dot.normal { background: #10b981; }
+.ric-dot.late { background: #f59e0b; }
+.ric-dot.absent { background: #ef4444; }
+
+/* Right - Slots */
+.ri-right {
+  flex: 1;
+  min-width: 0;
+  padding-bottom: 20rpx;
+}
+
+.rislots-row {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 12rpx;
+  width: 100%;
+}
+
+.rislot {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 12rpx 4rpx;
+  border-radius: 16rpx;
+  background: #f8fafc;
+  border: 2rpx solid #f1f5f9;
+  min-width: 0;
+}
+
+.rislot-label {
+  font-size: 16rpx;
+  color: #94a3b8;
+  font-weight: 700;
+  margin-bottom: 4rpx;
+}
+
+.rislot-time {
+  font-size: 22rpx;
+  font-weight: 900;
+  color: #1e293b;
+}
+
+/* Slot Status Colors */
+.rislot.normal {
+  background: #F0FDF4;
+  border-color: #BBF7D0;
+}
+.rislot.normal .rislot-time { color: #166534; }
+
+.rislot.late {
+  background: #FFFBEB;
+  border-color: #FDE68A;
+}
+.rislot.late .rislot-time { color: #92400e; }
+
+.rislot.absent {
+  background: #FFF1F2;
+  border-color: #FECACA;
+}
+.rislot.absent .rislot-time { color: #991b1b; }
+
+/* Empty & Loading */
+.empty-state, .loading-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 120rpx 0;
+}
+
+.es-icon {
+  font-size: 80rpx;
+  margin-bottom: 24rpx;
+  opacity: 0.3;
+}
+
+.es-text, .loading-text {
+  font-size: 26rpx;
+  color: #94a3b8;
+  font-weight: 600;
+}
+
+/* Footer */
+.footer {
+  padding: 60rpx 0 100rpx;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8rpx;
+}
+
+.footer-icon {
+  width: 48rpx;
+  height: 48rpx;
+  opacity: 0.5;
+  margin-bottom: 8rpx;
+}
+
+.footer-title {
+  font-size: 22rpx;
+  font-weight: 800;
+  color: #94a3b8;
+  letter-spacing: 1rpx;
+}
+
+.footer-subtitle {
+  font-size: 14rpx;
+  font-weight: 600;
+  color: #cbd5e1;
+  letter-spacing: 2rpx;
+}
+
+.bottom-safe-area {
+  height: env(safe-area-inset-bottom);
+}

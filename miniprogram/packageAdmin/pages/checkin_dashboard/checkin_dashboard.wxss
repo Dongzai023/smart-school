@@ -308,12 +308,46 @@
     flex: 1;
 }
 
+.ocbm-label-row {
+    display: flex;
+    justify-content: flex-start;
+    align-items: center;
+    gap: 16rpx;
+    margin-bottom: 12rpx;
+}
+
 .ocbm-label {
     font-size: 28rpx;
     font-weight: 700;
     color: #1e293b;
-    display: block;
-    margin-bottom: 12rpx;
+}
+
+.ocbm-view-all {
+    display: flex;
+    align-items: center;
+    gap: 4rpx;
+    padding: 8rpx 16rpx;
+    background: rgba(0, 188, 125, 0.08);
+    border-radius: 100rpx;
+    transition: all 0.2s ease;
+}
+
+.ocbm-view-all:active {
+    opacity: 0.7;
+    transform: scale(0.95);
+}
+
+.ocbm-va-text {
+    font-size: 20rpx;
+    color: #00BC7D;
+    font-weight: 700;
+}
+
+.ocbm-va-icon {
+    font-size: 24rpx;
+    color: #00BC7D;
+    font-weight: 800;
+    margin-top: -2rpx;
 }
 
 .ocbm-desc {

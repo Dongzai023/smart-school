@@ -96,21 +96,31 @@ def get_overview(
         
     records = records_query.all()
     
-    signed_count = sum(1 for r in records if r.status in ("signed", "normal"))
-    late_count = sum(1 for r in records if r.status == "late")
+    dedup_records = []
+    seen_slots = set()
+    for r in records:
+        key = (r.checkin_date, r.time_slot_id)
+        if key not in seen_slots:
+            seen_slots.add(key)
+            dedup_records.append(r)
+
+    signed_count = sum(1 for r in dedup_records if r.status in ("signed", "normal"))
+    late_count = sum(1 for r in dedup_records if r.status == "late")
     
-    # 3. 计算应签到次数并推算缺勤
+    expected_total = 0
+    now = datetime.now()
     if period == "session":
-        # session 模式下，应签到次数就是 1 (即当前这一个时段)
-        expected_total = 1
+        expected_total = 1 if current_slot else 0
     else:
-        # 工作日天数 * 时段数
-        work_days = sum(1 for i in range((end_date - start_date).days + 1)
-                       if (start_date + timedelta(days=i)).weekday() < 5)
-        expected_total = work_days * slot_count
-        
-    # 计算缺勤（核心修复：absent 不一定存在于 DB 中）
-    absent_count = max(0, expected_total - signed_count - late_count)
+        for i in range((end_date - start_date).days + 1):
+            d = start_date + timedelta(days=i)
+            if d.weekday() < 5:
+                for s in slots:
+                    if d < now.date() or (d == now.date() and now.time() >= s["start"]): 
+                        expected_total += 1
+                        
+    actual_valid = sum(1 for r in dedup_records if r.status in ("signed", "normal", "late"))
+    absent_count = max(0, expected_total - actual_valid)
     
     # 出勤率：(正常+迟到) / 总应签
     attendance_rate = 0
@@ -707,12 +717,16 @@ def principal_get_dashboard(
 
         # 7. 分类聚合
         categories = {"normal": [], "late": [], "absent": [], "total": []}
+        from datetime import datetime
+        now = datetime.now()
         for t in teachers:
             t_records = record_map.get(t.id, [])
             # 这里的 record_count 是当前周期内的次数
             period_count = len(t_records)
             # 这里的 lifetime_count 是所有时间的次数 (用于排序和列表展示)
             lifetime_count = lifetime_map.get(t.id, 0)
+            is_hm = t.is_headmaster or getattr(t, 'role', '') == "head_teacher"
+            teacher_slots = get_user_time_slots(is_hm)
 
             teacher_info_base = {
                 "id": t.id,

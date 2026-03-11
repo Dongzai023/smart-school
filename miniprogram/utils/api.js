@@ -241,9 +241,6 @@ function getUserStats(userId = null) {
     const parsedId = parseInt(userId);
     if (userId && !isNaN(parsedId)) {
         params.user_id = parsedId;
-    } else {
-        const userInfo = getApp().globalData.userInfo || wx.getStorageSync('userInfo');
-        params.user_id = userInfo ? userInfo.id : 1;
     }
     return request(API.USER_ME_STATS, 'GET', params);
 }

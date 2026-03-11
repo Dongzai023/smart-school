@@ -3,6 +3,7 @@
     "pages/login/login",
     "pages/index/index",
     "pages/statistics/statistics",
+    "pages/statistics/records/records",
     "pages/profile/profile",
     "pages/leave-application/leave-application"
   ],

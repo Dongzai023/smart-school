@@ -109,7 +109,9 @@ Page({
 
   // 查看全部记录
   viewAllRecords() {
-    wx.showToast({ title: '查看全部记录', icon: 'none' });
+    wx.navigateTo({
+      url: '/pages/statistics/records/records'
+    });
   },
 
   // 切换底部导航

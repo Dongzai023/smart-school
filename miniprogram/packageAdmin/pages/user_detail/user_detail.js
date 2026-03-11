@@ -31,8 +31,8 @@ Page({
 
         this.setData({
             userId,
-            'user.name': name || '未知老师',
-            'user.department': department || '教师',
+            'user.name': name ? decodeURIComponent(name) : '未知老师',
+            'user.department': department ? decodeURIComponent(department) : '教师',
             'user.display_avatar': avatar ? decodeURIComponent(avatar) : '/assets/CodeBubbyAssets/2_423/5.svg',
             period: period || 'session',
             periodLabel: periods[period] || '时段'
@@ -84,7 +84,8 @@ Page({
         api.getStatsOverview(period || 'month', userId).then(res => {
             this.setData({
                 stats: {
-                    total: (res.signed_count || 0) + (res.late_count || 0) + (res.absent_count || 0),
+                    // "总打卡" 通常指成功打卡的次数：正常 + 迟到
+                    total: (res.signed_count || 0) + (res.late_count || 0),
                     normal: res.signed_count || 0,
                     late: res.late_count || 0,
                     absent: res.absent_count || 0
@@ -96,7 +97,7 @@ Page({
             api.getUserStats(userId).then(res => {
                 this.setData({
                     stats: {
-                        total: res.total_checkins || 0,
+                        total: (res.on_time_count || 0) + (res.late_count || 0),
                         normal: res.on_time_count || 0,
                         late: res.late_count || 0,
                         absent: 0 // getUserStats 暂不返回缺勤

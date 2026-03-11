@@ -16,7 +16,7 @@
                             </view>
                             <view class="pht-right">
                                 <view class="ph-icon-box">
-                                    <image class="ph-icon-img" src="../../../assets/icons/v3_icon.png" mode="aspectFit"></image>
+                                    <image class="ph-icon-img" src="https://www.qjzxmd.cn/uploads/icons/v3_icon.png" mode="aspectFit"></image>
                                 </view>
                             </view>
                         </view>
@@ -56,7 +56,13 @@
                         </view>
                     </view>
                     <view class="ocbm-info">
-                        <text class="ocbm-label">应到 {{summary.total}} 人</text>
+                        <view class="ocbm-label-row">
+                            <text class="ocbm-label">应到 {{summary.total}} 人</text>
+                            <view class="ocbm-view-all" bindtap="goToUserList" data-type="total">
+                                <text class="ocbm-va-text">查看全部</text>
+                                <text class="ocbm-va-icon">›</text>
+                            </view>
+                        </view>
                         <text class="ocbm-desc">实到 {{summary.normal_count}} 人</text>
                     </view>
                 </view>
@@ -176,7 +182,7 @@
                         <text class="abli-name">{{item.real_name}}</text>
                         <text class="abli-dept">{{item.department || ''}}</text>
                     </view>
-                    <view class="abli-tag orange" bindtap="goToUserDetail" data-id="{{item.id}}">迟到 ×{{item.record_count || 1}}</view>
+                    <view class="abli-tag orange" bindtap="goToUserDetail" data-id="{{item.id}}">迟到 ×{{item.late_count || 0}}</view>
                 </view>
             </view>
         </view>

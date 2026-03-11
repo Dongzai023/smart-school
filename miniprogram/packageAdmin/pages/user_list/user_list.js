@@ -17,7 +17,8 @@ Page({
             'late': '迟到人员名单',
             'absent': '缺勤异常名单',
             'leave': '请假人员列表',
-            'all': '全部人员'
+            'all': '全部人员',
+            'total': '应到人员总览'
         };
 
         const categoryLabels = {
@@ -25,7 +26,8 @@ Page({
             'late': '迟到统计',
             'absent': '缺勤统计',
             'leave': '请假统计',
-            'all': '应到统计'
+            'all': '应到统计',
+            'total': '应到总数'
         };
 
         wx.setNavigationBarTitle({ title: titles[type] || '人员列表' });
@@ -51,7 +53,7 @@ Page({
             period: this.data.period
         }).then(res => {
             let rawList = [];
-            if (this.data.type === 'all') {
+            if (this.data.type === 'all' || this.data.type === 'total') {
                 rawList = [
                     ...(res.categories.normal || []),
                     ...(res.categories.late || []),
@@ -78,9 +80,9 @@ Page({
                     ...u,
                     display_avatar,
                     statusText: this.getStatusText(u),
-                    statusClass: this.data.type === 'all' ? 'normal' : this.data.type
+                    statusClass: this.data.type === 'total' ? 'normal' : (this.data.type === 'all' ? 'normal' : this.data.type)
                 };
-            });
+            }).sort((a, b) => (b.record_count || 0) - (a.record_count || 0));
 
             this.setData({ users }, () => this.filterUsers());
             if (cb) cb();
@@ -91,10 +93,12 @@ Page({
     },
 
     getStatusText(user) {
+        const count = user.record_count || 0;
         if (this.data.type === 'normal') return '正常';
-        if (this.data.type === 'late') return '迟到';
+        if (this.data.type === 'late') return `迟到 ${count} 次`;
         if (this.data.type === 'absent') return '缺勤';
         if (this.data.type === 'leave') return '请假';
+        if (this.data.type === 'total' || this.data.type === 'all') return `签到 ${count} 次`;
         return '正常';
     },
 

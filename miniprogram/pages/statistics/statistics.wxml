@@ -179,7 +179,7 @@
           <text class="section-subtitle">RECENT RECORDS</text>
         </view>
       </view>
-      <text class="view-all">查看全部 ></text>
+      <text class="view-all" bindtap="viewAllRecords">查看全部 ></text>
     </view>
     
     <view class="record-list">

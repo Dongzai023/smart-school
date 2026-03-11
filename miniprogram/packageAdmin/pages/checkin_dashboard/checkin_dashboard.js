@@ -162,9 +162,21 @@ Page({
     goToUserDetail: function (e) {
         const userId = e.currentTarget.dataset.id;
         if (!userId) return;
-        wx.navigateTo({
-            url: `../user_detail/user_detail?userId=${userId}`
-        });
+
+        // Find user in categories
+        const { categories } = this.data;
+        const allUsers = [...categories.normal, ...categories.late, ...categories.absent];
+        const user = allUsers.find(u => u.id == userId);
+
+        if (user) {
+            wx.navigateTo({
+                url: `../user_detail/user_detail?userId=${userId}&name=${encodeURIComponent(user.real_name || '')}&period=${this.data.activePeriod}&department=${encodeURIComponent(user.department || '')}&avatar=${encodeURIComponent(user.display_avatar || '')}`
+            });
+        } else {
+            wx.navigateTo({
+                url: `../user_detail/user_detail?userId=${userId}&period=${this.data.activePeriod}`
+            });
+        }
     },
 
     onLogout: function () {

@@ -1,7 +1,16 @@
 {
   "description": "清涧中学教师考勤管理系统",
   "packOptions": {
-    "ignore": [],
+    "ignore": [
+      {
+        "type": "folder",
+        "value": "web"
+      },
+      {
+        "type": "folder",
+        "value": "server"
+      }
+    ],
     "include": []
   },
   "setting": {

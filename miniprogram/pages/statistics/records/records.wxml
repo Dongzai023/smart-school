@@ -1,0 +1,105 @@
+<view class="page-container">
+  <!-- Header with Stats -->
+  <view class="profile-header">
+    <view class="ph-bg"></view>
+    <view class="ph-content">
+      <view class="phc-avatar-wrap">
+        <image wx:if="{{userInfo.avatar_url}}" class="phc-avatar" src="{{baseUrl}}{{userInfo.avatar_url}}" mode="aspectFill"></image>
+        <image wx:else class="phc-avatar" src="/assets/CodeBubbyAssets/2_423/5.svg" mode="aspectFill"></image>
+      </view>
+      <view class="phc-info">
+        <text class="phc-name">{{userInfo.name}}</text>
+        <view class="phc-dept">
+          <text class="phcd-text">{{userInfo.department || '教师'}}</text>
+        </view>
+      </view>
+    </view>
+  </view>
+
+  <!-- Stats Summary -->
+  <view class="stats-summary">
+    <view class="ss-item">
+      <text class="ssi-value">{{stats.total}}</text>
+      <text class="ssi-label">总打卡</text>
+    </view>
+    <view class="ss-divider"></view>
+    <view class="ss-item">
+      <text class="ssi-value success">{{stats.normal}}</text>
+      <text class="ssi-label">正常</text>
+    </view>
+    <view class="ss-divider"></view>
+    <view class="ss-item">
+      <text class="ssi-value warning">{{stats.late}}</text>
+      <text class="ssi-label">迟到</text>
+    </view>
+    <view class="ss-divider"></view>
+    <view class="ss-item">
+      <text class="ssi-value danger">{{stats.absent}}</text>
+      <text class="ssi-label">缺勤</text>
+    </view>
+  </view>
+
+  <!-- Records List -->
+  <view class="records-section">
+    <view class="rs-header">
+      <view class="rs-title-wrap">
+        <text class="rsh-title">详细记录</text>
+        <text class="rsh-subtitle">TOTAL RECORDS</text>
+      </view>
+      <picker mode="date" fields="month" bindchange="onMonthChange">
+        <view class="rsh-period">
+          {{selectedMonth}} <text class="arrow-down">▼</text>
+        </view>
+      </picker>
+    </view>
+
+    <view class="rs-list">
+      <view class="record-item" wx:for="{{records}}" wx:key="id">
+        <!-- 左侧日期 -->
+        <view class="ri-left">
+          <view class="ril-date">
+            <text class="ril-datestr">{{item.dateStr}}</text>
+          </view>
+          <text class="ril-weekday">{{item.weekday}}</text>
+        </view>
+
+        <!-- 连接线 -->
+        <view class="ri-center">
+          <view class="ric-line">
+            <view class="ric-dot {{item.statusClass}}"></view>
+          </view>
+        </view>
+
+        <!-- 右侧：打卡详情 -->
+        <view class="ri-right">
+          <view class="rislots-row">
+            <view class="rislot {{slot.statusClass}}" wx:for="{{item.slots}}" wx:key="label" wx:for-item="slot">
+              <text class="rislot-label">{{slot.label}}</text>
+              <text class="rislot-time">{{slot.time}}</text>
+            </view>
+          </view>
+        </view>
+      </view>
+
+      <!-- Loading State -->
+      <view class="loading-state" wx:if="{{loading}}">
+        <text class="loading-text">加载中...</text>
+      </view>
+
+      <!-- Empty State -->
+      <view class="empty-state" wx:if="{{!loading && records.length === 0}}">
+        <view class="es-icon">📋</view>
+        <text class="es-text">暂无相关考勤记录</text>
+      </view>
+    </view>
+  </view>
+
+  <!-- Footer -->
+  <view class="footer">
+    <image class="footer-icon" src="/assets/CodeBubbyAssets/3_4/54.svg" mode="aspectFit"></image>
+    <text class="footer-title">海亮教育·清涧中学考勤系统</text>
+    <text class="footer-subtitle">DIGITAL ATTENDANCE PLATFORM</text>
+  </view>
+  
+  <view class="bottom-safe-area"></view>
+</view>
