@@ -865,11 +865,17 @@ def principal_get_dashboard(
             if dedup_records and any(r.status == "late" for r in dedup_records):
                 logger.info(f"User {t.real_name} (ID: {t.id}): total_records={len(dedup_records)}, late_count={teacher_info_period['late_count']}")
             
+            # 使用非排他性分类：一个老师可以同时出现在迟到和缺勤名单中
+            # 这解决了长周期（月/学期）下大部分人都有缺勤导致迟到统计归零的问题
+            is_normal = True
             if has_absent:
                 categories["absent"].append(teacher_info_period)
-            elif has_late:
+                is_normal = False
+            if has_late:
                 categories["late"].append(teacher_info_period)
-            else:
+                is_normal = False
+            
+            if is_normal:
                 categories["normal"].append(teacher_info_period)
 
 
