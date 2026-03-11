@@ -107,20 +107,24 @@ def get_overview(
     signed_count = sum(1 for r in dedup_records if r.status in ("signed", "normal"))
     late_count = sum(1 for r in dedup_records if r.status == "late")
     
-    expected_total = 0
+    actual_valid = sum(1 for r in dedup_records if r.status in ("signed", "normal", "late"))
+    
+    # 缺勤计算：以时段为单位，以便和下方详情打卡记录保持完全一致
     now = datetime.now()
     if period == "session":
-        expected_total = 1 if current_slot else 0
+        absent_count = 0 if actual_valid > 0 else (1 if current_slot else 0)
+        past_expected_slots = 1 if current_slot else 0
     else:
+        past_expected_slots = 0
         for i in range((end_date - start_date).days + 1):
             d = start_date + timedelta(days=i)
             if d.weekday() < 5:
                 for s in slots:
-                    if d < now.date() or (d == now.date() and now.time() >= s["start"]): 
-                        expected_total += 1
-                        
-    actual_valid = sum(1 for r in dedup_records if r.status in ("signed", "normal", "late"))
-    absent_count = max(0, expected_total - actual_valid)
+                    if d < now.date() or (d == now.date() and now.time() >= s["start"]):
+                        past_expected_slots += 1
+        absent_count = max(0, past_expected_slots - actual_valid)
+    
+    expected_total = past_expected_slots # 重塑基数供出勤率计算，避免出现不可控的错误率
     
     # 出勤率：(正常+迟到) / 总应签
     attendance_rate = 0
@@ -756,10 +760,15 @@ def principal_get_dashboard(
                     seen_slots.add(key)
                     dedup_records.append(r)
 
-            past_expected_slots = 0
+            has_late = any(r.status == "late" for r in dedup_records)
+            has_signed = any(r.status in ("signed", "normal", "late") for r in dedup_records)
+
+            # 通过日期集合计算缺勤，修正以时段计算
             if is_session_mode:
+                calc_absent = 1 if (current_slot and not has_signed) else 0
                 past_expected_slots = 1 if current_slot else 0
             else:
+                past_expected_slots = 0
                 for i in range((end_date - start_date).days + 1):
                     d = start_date + timedelta(days=i)
                     if d.weekday() < 5:
