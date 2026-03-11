@@ -44,14 +44,14 @@ Page({
     },
 
     fetchUserRecords() {
-        const { userId } = this.data;
+        const { userId, period } = this.data;
         const statusMap = {
             'signed': { text: '正常', cls: 'normal' },
             'normal': { text: '正常', cls: 'normal' },
             'late': { text: '迟到', cls: 'late' },
             'absent': { text: '缺勤', cls: 'absent' }
         };
-        api.getStatsRecords(20, userId).then(res => {
+        api.getStatsRecords(50, userId, period).then(res => {
             const records = (res.records || []).map(r => {
                 const slots = (r.slots || []).map(s => ({
                     label: s.label,
@@ -84,8 +84,8 @@ Page({
         api.getStatsOverview(period || 'month', userId).then(res => {
             this.setData({
                 stats: {
-                    // "总打卡" 通常指成功打卡的次数：正常 + 迟到
-                    total: (res.signed_count || 0) + (res.late_count || 0),
+                    // "总打卡" 在此处统一为“应打卡总数”，以便和列表长度逻辑一致
+                    total: res.total_count || 0,
                     normal: res.signed_count || 0,
                     late: res.late_count || 0,
                     absent: res.absent_count || 0

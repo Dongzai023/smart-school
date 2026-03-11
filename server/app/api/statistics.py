@@ -277,48 +277,58 @@ def get_timeslot_stats(
 @router.get("/records")
 def get_records(
     page: int = Query(1, ge=1, description="页码"),
-    page_size: int = Query(10, ge=1, le=50, description="每页条数"),
+    page_size: int = Query(20, ge=1, le=100, description="每页条数"),
     user_id: Optional[int] = Query(None, description="目标用户ID (管理员权限)"),
+    period: Optional[str] = Query(None, description="统计周期: week/month/semester"),
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user)
 ):
-    """获取最近签到记录，按日期分组"""
+    """获取签到记录，按日期分组，支持按周期获取所有工作日"""
     target_user_id = current_user.id
     username = str(current_user.username).strip().lower()
-    employee_id = str(current_user.employee_id).strip().lower() if getattr(current_user, 'employee_id', None) else ""
     is_mgmt = (current_user.role in ["admin", "principal"])
     is_auth_for_all = is_mgmt or (current_user.view_scope in ["all", "head_teacher", "subject_teacher"])
     
     if user_id and is_auth_for_all:
         target_user_id = user_id
     elif user_id and user_id != current_user.id:
-        logger.warning(f"get_records: User {username} (ID: {current_user.id}) denied access to user ID {user_id}. auth_for_all={is_auth_for_all}")
+        logger.warning(f"get_records: User {username} (ID: {current_user.id}) denied access to user ID {user_id}")
     
-    logger.info(f"get_records: current_user={username}, target_user_id={target_user_id}, page={page}")
-    
-    # 注意：slot_count 逻辑依赖于目标用户身份，但为简化，目前校长端和老师端差异主要在展示
-    # 这里的 slot_count 实际用于前端逻辑，后端仅返回记录
-    
-    # 查询有签到记录的日期
-    dates_query = db.query(
-        func.distinct(CheckinRecord.checkin_date)
-    ).filter(
-        CheckinRecord.user_id == target_user_id
-    ).order_by(
-        CheckinRecord.checkin_date.desc()
-    ).offset((page - 1) * page_size).limit(page_size).all()
-    
-    total = db.query(
-        func.count(func.distinct(CheckinRecord.checkin_date))
-    ).filter(
-        CheckinRecord.user_id == target_user_id
-    ).scalar() or 0
+    if period:
+        # 按周期获取所有工作日
+        start_date, end_date = _get_date_range(period)
+        now = datetime.now()
+        dates = []
+        for i in range((end_date - start_date).days + 1):
+            d = start_date + timedelta(days=i)
+            if d.weekday() < 5 and d <= now.date():
+                dates.append(d)
+        dates.sort(reverse=True)
+        # 支持对日期列表的分页
+        total = len(dates)
+        dates_to_show = dates[(page - 1) * page_size : page * page_size]
+    else:
+        # 传统模式：查询有签到记录的最近日期
+        dates_query = db.query(
+            func.distinct(CheckinRecord.checkin_date)
+        ).filter(
+            CheckinRecord.user_id == target_user_id
+        ).order_by(
+            CheckinRecord.checkin_date.desc()
+        ).offset((page - 1) * page_size).limit(page_size).all()
+        
+        dates_to_show = [d[0] for d in dates_query]
+        total = db.query(
+            func.count(func.distinct(CheckinRecord.checkin_date))
+        ).filter(
+            CheckinRecord.user_id == target_user_id
+        ).scalar() or 0
     
     weekday_names = ['星期一', '星期二', '星期三', '星期四', '星期五', '星期六', '星期日']
     month_names = ['1月', '2月', '3月', '4月', '5月', '6月', '7月', '8月', '9月', '10月', '11月', '12月']
     
     records = []
-    for (d,) in dates_query:
+    for d in dates_to_show:
         day_records = db.query(CheckinRecord).filter(
             CheckinRecord.user_id == target_user_id,
             CheckinRecord.checkin_date == d

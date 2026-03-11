@@ -209,7 +209,7 @@ function getStatsTimeslot(period = 'week') {
 }
 
 /** 最近签到记录 */
-function getStatsRecords(pageSize = 10, userId = null) {
+function getStatsRecords(pageSize = 10, userId = null, period = null) {
     const params = { page_size: pageSize };
     const parsedId = parseInt(userId);
     if (userId && !isNaN(parsedId)) {
@@ -217,6 +217,9 @@ function getStatsRecords(pageSize = 10, userId = null) {
     } else {
         const userInfo = getApp().globalData.userInfo || wx.getStorageSync('userInfo');
         params.user_id = userInfo ? userInfo.id : 1;
+    }
+    if (period) {
+        params.period = period;
     }
     return request(API.STATS_RECORDS, 'GET', params);
 }
